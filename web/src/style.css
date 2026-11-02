@@ -73,7 +73,7 @@
 
 /* ------------------------------------------------------------ base */
 * { box-sizing: border-box; }
-html, body { height: 100%; margin: 0; }
+html, body { height: 100%; margin: 0; overscroll-behavior: none; }
 body {
   background: var(--plane);
   color: var(--ink);
@@ -511,13 +511,15 @@ a { color: var(--accent); }
   .toggle span { font-size: 12px; }
   .zoom-btns { bottom: calc(var(--sheet-peek) + 12px); }
   .status { bottom: calc(var(--sheet-peek) + 12px); }
+  /* the page itself never scrolls or bounces: only the sheet's content does */
+  html, body { position: fixed; inset: 0; width: 100%; }
   .panel {
     --sheet-peek: 168px;
     position: fixed;
     left: 0;
     right: 0;
     bottom: 0;
-    height: var(--sheet-peek);
+    height: var(--sheet-peek); /* set by sheet.ts */
     border-left: 0;
     border-top: 1px solid var(--hairline);
     border-radius: 16px 16px 0 0;
@@ -526,11 +528,14 @@ a { color: var(--accent); }
     transition: height 0.3s ease;
     padding-bottom: env(safe-area-inset-bottom);
   }
-  .panel.open { height: min(58vh, 560px); }
+  .panel.dragging { transition: none; }
+  /* peeking: the content is a preview, so a drag anywhere resizes the sheet instead of scrolling */
+  .panel[data-sheet="peek"] .panel-body { overflow: hidden; }
+  .sheet-handle, .panel .phead { touch-action: none; }
   .sheet-handle {
     display: block;
     flex: none;
-    height: 22px;
+    height: 28px;
     border: 0;
     background: none;
     cursor: pointer;
@@ -540,7 +545,7 @@ a { color: var(--accent); }
     content: "";
     position: absolute;
     left: 50%;
-    top: 8px;
+    top: 10px;
     width: 38px;
     height: 4px;
     border-radius: 2px;

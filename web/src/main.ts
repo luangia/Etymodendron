@@ -5,6 +5,7 @@ import {
 } from "./data";
 import { renderMissPanel, renderRootPanel, renderUnrootedPanel, renderWordPanel, type PanelContext } from "./panel";
 import { attachSearch, WordSearch } from "./search";
+import { BottomSheet } from "./sheet";
 import { RadialTree } from "./tree";
 import type { Branch, IndexHit, RootDoc, RootMeta, SearchIndex, UnrootedInfo } from "./types";
 
@@ -273,19 +274,20 @@ function setupTheme() {
 
 const mobile = matchMedia("(max-width: 760px)");
 let sheetTimer = 0;
-function expandSheet(open: boolean) {
-  if (!mobile.matches) return;
-  const changed = els.panel.classList.contains("open") !== open;
-  els.panel.classList.toggle("open", open);
-  els.handle.setAttribute("aria-expanded", String(open));
-  if (!changed) return;
-  // once the sheet has moved, re-fit the tree into the space left above it
+// phones: the details panel is a bottom sheet; once it settles, re-fit the tree above it
+const sheet = new BottomSheet(els.panel, els.body, els.handle, ".sheet-handle, .phead", () => mobile.matches, (state) => {
   clearTimeout(sheetTimer);
   sheetTimer = window.setTimeout(() => {
     syncInsets();
+    if (state === "full") return; // the tree is covered anyway
     if (S.selected) tree.focus(S.selected);
     else tree.fit();
   }, 320);
+});
+function expandSheet(open: boolean) {
+  if (!mobile.matches) return;
+  if (!open) sheet.set("peek");
+  else if (sheet.state === "peek") sheet.set("half");
 }
 function syncInsets() {
   // the breadcrumbs and legend float over the top of the stage, and on phones the details
@@ -297,9 +299,7 @@ function syncInsets() {
 }
 
 function setupLayout() {
-  els.handle.addEventListener("click", () => expandSheet(!els.panel.classList.contains("open")));
   mobile.addEventListener("change", () => {
-    els.panel.classList.remove("open");
     syncInsets();
     tree.fit();
   });
