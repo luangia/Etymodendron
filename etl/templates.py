@@ -290,7 +290,7 @@ def classic_edges(templates, text, entry_lang, entry_key):
     """Edges implied by classic templates, using prose order for the chain."""
     text = text or ""
     para_s, para_e = _main_paragraph_bounds(text)
-    out, chain, cursor = [], [], 0
+    out, chain, cursor, roots = [], [], 0, []
     prev_end, prev_edge, chain_open = None, None, True
     unknown = False
 
@@ -317,7 +317,7 @@ def classic_edges(templates, text, entry_lang, entry_key):
                 e = _edge(a.get("2", ""), term, ROOT, "root", "root", uncertain=bool(ev), evidence=ev,
                           pid=a.get(f"id{i - 2}") or a.get("id"))
                 if e:
-                    out.append(e)
+                    roots.append(e)
             continue
 
         is_chain = name in CHAIN_TEMPLATES or name in SAME_LANG_TEMPLATES
@@ -338,7 +338,8 @@ def classic_edges(templates, text, entry_lang, entry_key):
             if name in SAME_LANG_TEMPLATES:
                 plang, term, gloss = entry_lang, a.get("2", ""), a.get("t") or a.get("4")
             else:
-                plang, term, gloss = a.get("2", ""), a.get("3", ""), a.get("t") or a.get("5")
+                # an empty term with a display form is an unlinked term: {{der|en|ine-pro||*x}}
+                plang, term, gloss = a.get("2", ""), a.get("3") or a.get("4", ""), a.get("t") or a.get("5")
             etype = CHAIN_TEMPLATES.get(name) or SAME_LANG_TEMPLATES[name]
             e = _edge(plang, term, etype, "template", name, uncertain=bool(ev) or not in_main,
                       evidence=ev or (None if in_main else "stated outside the main etymology paragraph"),
@@ -386,6 +387,15 @@ def classic_edges(templates, text, entry_lang, entry_key):
                       child=child, uncertain=bool(ev) or not in_main, evidence=ev, pid=pid, gloss=gloss)
             if e:
                 out.append(e)
+    # {{root}} names the word's PIE root; the chain in the same prose says how it got here. Hang the
+    # root off the end of that chain (en <- grc karkinos <- *(s)ker-) instead of off the word itself,
+    # so the route is kept. Like other prose-order links, it only applies to this page's trace.
+    if chain:
+        end = chain[-1]["p"]
+        for e in roots:
+            if e["p"] != end:
+                e["c"] = end
+    out.extend(roots)
     return out, unknown
 
 

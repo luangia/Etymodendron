@@ -38,8 +38,24 @@ def collect(G):
         per_group[g] = res
         for pie, (score, path) in res.items():
             members[pie].append((g, score, path))
-    tops = {p for p in members if G.is_top(p)}
+    tops = {p for p in members if G.is_top(p) and not _continues_to_root(G, p, members[p], per_group)}
     return members, per_group, tops
+
+
+def _continues_to_root(G, pie, mems, per_group):
+    """True if every English word reaching this PIE word also reaches, through it, a certain root.
+
+    Covers links stated only on the English page (e.g. crab: *grobʰeh₂yéti, "an o-grade of *gerbʰ-"),
+    which the global check in Graph.is_top cannot see.
+    """
+    if pie_kind(node_term(pie)) != "lexeme":
+        return False
+    for g, _, _ in mems:
+        if not any(r != pie and s[0] == 0 and pie_kind(node_term(r)) == "root"
+                   and any(G.edges[e].parent == pie for e in path)
+                   for r, (s, path) in per_group[g].items()):
+            return False
+    return True
 
 
 def _path_flags(G, score, path):

@@ -63,7 +63,9 @@ function edgeNotes(e: Edge | undefined): HTMLElement | null {
   const notes: Child[] = [];
   if (e.uncertain) notes.push(h("span", "flag warn", "uncertain"));
   if (e.via === "sequence") notes.push(h("span", "flag", e.confirmed ? "from prose order, confirmed" : "from prose order"));
-  if (e.via === "root") notes.push(h("span", "flag", "via {{root}} template"));
+  if (e.via === "root") {
+    notes.push(h("span", "flag", "root named in the English entry"));
+  }
   if (e.link === "unresolved") notes.push(h("span", "flag", "no page under this form"));
   const wrap = h("div", "edge-notes", ...notes);
   if (e.uncertain && e.evidence) {

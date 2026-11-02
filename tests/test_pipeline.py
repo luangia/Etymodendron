@@ -238,3 +238,38 @@ def test_etymon_uncertainty_wins_over_unhedged_template(tmp_path):
     assert "ine-pro|ph₂tḗr" in tops
     hits = {index["roots"][h[0]]["term"]: h[2] for h in index["words"]["father"]}
     assert hits["*peh₂-"] & 1 and not hits["*ph₂tḗr"] & 1
+
+
+def test_root_template_hangs_off_the_stated_chain():
+    text = "From Ancient Greek καρκίνος (karkínos, “crab”)."
+    es = edges_of([T("root", _1="en", _2="ine-pro", _3="*(s)ker-"),
+                   T("der", "Ancient Greek καρκίνος", _1="en", _2="grc", _3="καρκίνος")], text, word="carcino-")
+    assert [(e["c"], e["p"], e["t"]) for e in es] == [
+        (None, "grc|καρκίνος", "derived"), ("grc|καρκίνος", "ine-pro|(s)ker-", "root")]
+
+
+def test_root_template_without_chain_stays_direct():
+    es = edges_of([T("root", _1="en", _2="ine-pro", _3="*bʰer-")], "Compare bear.", word="x")
+    assert [(e["c"], e["p"]) for e in es] == [(None, "ine-pro|bʰer-")]
+
+
+def test_unlinked_term_uses_display_form():
+    text = "From Proto-Germanic *krabbō, from Proto-Indo-European *grobʰeh₂yéti."
+    es = edges_of([T("inh", "Proto-Germanic *krabbō", _1="en", _2="gem-pro", _3="*krabbō"),
+                   T("der", "Proto-Indo-European *grobʰeh₂yéti", _1="en", _2="ine-pro", _3="", _4="*grobʰeh₂yéti")], text)
+    assert [e["p"] for e in es] == ["gem-pro|krabbō", "ine-pro|grobʰeh₂yéti"]
+
+
+def test_root_reached_through_greek_branch(tmp_path):
+    lines = [
+        entry("en", "carcino-", [T("root", _1="en", _2="ine-pro", _3="*(s)ker-"),
+                                 T("der", "Ancient Greek καρκίνος", _1="en", _2="grc", _3="καρκίνος")],
+              "From Ancient Greek καρκίνος (karkínos, “crab”)."),
+        entry("grc", "καρκίνος", [T("der", "*karkros", _1="grc", _2="ine-pro", _3="*karkros")],
+              "Could be from a Proto-Indo-European *karkros."),
+    ]
+    G, members, tops, index, unrooted = build(tmp_path, lines)
+    _, score, path = members["ine-pro|(s)ker-"][0]
+    assert [G.edges[e].parent for e in path] == ["grc|καρκίνος", "ine-pro|(s)ker-"] and score[0] == 0
+    hits = {index["roots"][h[0]]["term"]: h[2] for h in index["words"]["carcino-"]}
+    assert hits == {"*(s)ker-": 0, "*karkros": 1}
