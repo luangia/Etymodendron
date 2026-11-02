@@ -36,6 +36,25 @@ npm run build     # → web/dist (static; deploy anywhere, works from a sub-path
   than drawn; affix-only paths are hidden unless the checkbox is on.
 - State lives in the URL hash (`#r=<root>&c=<node>&w=<word>`), so views can be shared.
 
+### Deploying (Cloudflare Pages)
+
+The site is built locally (the data is not in git) and the finished `web/dist` is uploaded:
+
+```bash
+cd web
+npx wrangler login     # once: opens the browser to authorise your Cloudflare account
+npm run deploy         # build → check Pages limits → upload to the "etymodendron" project
+```
+
+The first deploy creates the project and prints its `*.pages.dev` URL; add a custom domain in the
+Cloudflare dashboard if you want one. `npm run check-dist` fails early if the build ever exceeds
+Pages' limits (20,000 files, 25 MB per file). `web/public/_headers` sets caching: hashed app
+bundles are immutable, `data/` refreshes within an hour of a redeploy.
+
+## Licenses
+
+The generated data is derived from Wiktionary and is CC BY-SA 4.0 — see `DATA_LICENSE.md`.
+
 ## How ancestry is read
 
 | Source | Edges | Trust |
