@@ -327,13 +327,6 @@ function setupAbout() {
     if (ev.target === dialog) dialog.close();
   });
 
-  // optional: where readers report display bugs, set at build time (VITE_REPORT_URL=https://...)
-  const report = import.meta.env.VITE_REPORT_URL as string | undefined;
-  if (report && /^https?:\/\//.test(report)) {
-    $<HTMLAnchorElement>("about-report-link").href = report;
-    $("about-report").hidden = false;
-  }
-
   loadBuildInfo()
     .then(({ dump_date }) => {
       if (!dump_date) return;

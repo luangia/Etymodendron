@@ -46,10 +46,6 @@ npx wrangler login     # once: opens the browser to authorise your Cloudflare ac
 npm run deploy         # build → check Pages limits → upload to the "etymodendron" project
 ```
 
-To show a "report it here" link in the About panel's FAQ, set `VITE_REPORT_URL` when building,
-e.g. `VITE_REPORT_URL=https://github.com/you/etymodendron/issues npm run deploy`; without it the
-FAQ just points readers to Wiktionary.
-
 The first deploy creates the project and prints its `*.pages.dev` URL; add a custom domain in the
 Cloudflare dashboard if you want one. `npm run check-dist` fails early if the build ever exceeds
 Pages' limits (20,000 files, 25 MB per file). `web/public/_headers` sets caching: hashed app
