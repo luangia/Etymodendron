@@ -427,6 +427,71 @@ a { color: var(--accent); }
 .btn:hover { border-color: var(--ink-2); }
 .btn[aria-pressed="true"] { background: var(--ink); color: var(--surface); }
 
+/* ------------------------------------------------------------ about / FAQ dialog */
+.about {
+  width: min(680px, calc(100vw - 32px));
+  max-height: min(86vh, 900px);
+  padding: 0;
+  border: 1px solid var(--hairline);
+  border-radius: 16px;
+  background: var(--surface);
+  color: var(--ink);
+  box-shadow: var(--shadow);
+  overflow: hidden;
+}
+.about[open] { display: flex; flex-direction: column; }
+.about::backdrop { background: rgba(11, 11, 11, 0.45); }
+.about-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 16px 12px 22px;
+  border-bottom: 1px solid var(--hairline);
+}
+.about-head h2 { margin: 0; font-size: 18px; letter-spacing: -0.01em; }
+.about-body { overflow-y: auto; padding: 6px 22px 24px; overscroll-behavior: contain; }
+.about-lede { color: var(--ink-2); margin: 12px 0 4px; }
+.about h3 {
+  margin: 22px 0 6px;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--muted);
+}
+.about details { border-bottom: 1px solid var(--hairline); }
+.about summary {
+  cursor: pointer;
+  padding: 10px 24px 10px 0;
+  font-weight: 600;
+  list-style: none;
+  position: relative;
+}
+.about summary::-webkit-details-marker { display: none; }
+.about summary::after {
+  content: "+";
+  position: absolute;
+  right: 4px;
+  top: 8px;
+  color: var(--muted);
+  font-weight: 400;
+  font-size: 18px;
+}
+.about details[open] summary::after { content: "−"; }
+.about details > :not(summary) { margin: 0 0 12px; color: var(--ink-2); }
+.about details ul { padding-left: 20px; }
+.about details li { margin: 3px 0; }
+.about-keys { list-style: none; padding-left: 0 !important; }
+.about-keys .key { display: inline-block; width: 16px; height: 3px; border-radius: 2px; background: var(--bc); vertical-align: middle; margin-right: 6px; }
+.about kbd {
+  font: 12px var(--font);
+  padding: 1px 6px;
+  border: 1px solid var(--hairline);
+  border-bottom-width: 2px;
+  border-radius: 4px;
+  background: var(--surface-2);
+}
+
 /* ------------------------------------------------------------ phones: bottom sheet */
 @media (max-width: 760px) {
   .topbar { padding-left: 12px; padding-right: 12px; gap: 8px; }
@@ -474,6 +539,8 @@ a { color: var(--accent); }
   }
   .panel-body { padding: 0 16px 20px; }
   .pterm { font-size: 22px; }
+  .about { width: 100vw; max-width: 100vw; height: 100dvh; max-height: 100dvh; border-radius: 0; border: 0; margin: 0; }
+  .about-body { padding-bottom: max(24px, env(safe-area-inset-bottom)); }
 }
 body:has(.panel) { --sheet-peek: 168px; }
 

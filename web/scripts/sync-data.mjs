@@ -1,6 +1,6 @@
 // Copy the pipeline output (../data/out) into public/data so Vite serves and bundles it.
 // Skips the copy when public/data is already newer than the source index.
-import { cpSync, existsSync, mkdirSync, rmSync, statSync } from "node:fs";
+import { cpSync, existsSync, mkdirSync, readFileSync, rmSync, statSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -25,3 +25,14 @@ if (fresh) {
   cpSync(join(src, "roots"), join(dest, "roots"), { recursive: true });
   console.log(`copied ${src} -> public/data`);
 }
+
+// build.json: when the Wiktionary dump was published, for the About panel. Always rewritten (tiny).
+const manifest = join(here, "..", "..", "data", "raw", "MANIFEST.json");
+let dumpDate = null;
+try {
+  const m = JSON.parse(readFileSync(manifest, "utf8"));
+  dumpDate = m.last_modified ? new Date(m.last_modified).toISOString().slice(0, 10) : null;
+} catch {
+  console.warn("no data/raw/MANIFEST.json: the About panel will not show the data date");
+}
+writeFileSync(join(dest, "build.json"), JSON.stringify({ dump_date: dumpDate, built: new Date().toISOString().slice(0, 10) }));

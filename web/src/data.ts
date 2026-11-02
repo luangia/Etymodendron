@@ -10,6 +10,9 @@ async function getJSON<T>(path: string): Promise<T> {
 
 export const loadIndex = () => getJSON<SearchIndex>("index.json");
 
+/** Written by scripts/sync-data.mjs: the date of the Wiktionary dump the data was built from. */
+export const loadBuildInfo = () => getJSON<{ dump_date: string | null; built: string }>("build.json");
+
 let languages: Record<string, string> = {};
 export async function loadLanguages() {
   try {

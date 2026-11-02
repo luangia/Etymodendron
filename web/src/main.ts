@@ -1,7 +1,7 @@
 import "./style.css";
 import {
-  ancestry, BRANCH_LABEL, BRANCHES, branchCounts, buildView, findById, findWord, langName, loadIndex, loadLanguages,
-  loadRoot, type VNode,
+  ancestry, BRANCH_LABEL, BRANCHES, branchCounts, buildView, findById, findWord, langName, loadBuildInfo, loadIndex,
+  loadLanguages, loadRoot, type VNode,
 } from "./data";
 import { renderRootPanel, renderWordPanel, type PanelContext } from "./panel";
 import { attachSearch, WordSearch } from "./search";
@@ -295,11 +295,41 @@ function setupLayout() {
   });
 }
 
+// ------------------------------------------------------------------ about / FAQ
+
+function setupAbout() {
+  const dialog = $<HTMLDialogElement>("about");
+  $("about-btn").addEventListener("click", () => dialog.showModal());
+  $("about-close").addEventListener("click", () => dialog.close());
+  // a click on the backdrop lands on the dialog element itself
+  dialog.addEventListener("click", (ev) => {
+    if (ev.target === dialog) dialog.close();
+  });
+
+  // optional: where readers report display bugs, set at build time (VITE_REPORT_URL=https://...)
+  const report = import.meta.env.VITE_REPORT_URL as string | undefined;
+  if (report && /^https?:\/\//.test(report)) {
+    $<HTMLAnchorElement>("about-report-link").href = report;
+    $("about-report").hidden = false;
+  }
+
+  loadBuildInfo()
+    .then(({ dump_date }) => {
+      if (!dump_date) return;
+      const when = new Date(`${dump_date}T00:00:00Z`).toLocaleDateString(undefined,
+        { year: "numeric", month: "long", day: "numeric", timeZone: "UTC" });
+      $("about-date").textContent =
+        `It reflects the Wiktionary data published on ${when}. Edits made on Wiktionary since then aren’t included yet.`;
+    })
+    .catch(() => { /* keep the generic sentence */ });
+}
+
 // ------------------------------------------------------------------ boot
 
 async function main() {
   setupTheme();
   setupLayout();
+  setupAbout();
   syncInsets();
   status("Loading word index…");
   let index: SearchIndex;

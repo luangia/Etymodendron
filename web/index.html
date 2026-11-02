@@ -2,16 +2,23 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <meta name="color-scheme" content="light dark" />
     <title>Etymodendron</title>
-    <meta name="description" content="English words that share a Proto-Indo-European root, traced through Wiktionary." />
-    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='3' fill='%23898781'/%3E%3Cg stroke-width='2.5' fill='none' stroke-linecap='round'%3E%3Cpath d='M16 16 C16 9 10 6 6 6' stroke='%232a78d6'/%3E%3Cpath d='M16 16 C23 16 26 10 26 6' stroke='%23eb6834'/%3E%3Cpath d='M16 16 C16 23 22 26 26 26' stroke='%231baf7a'/%3E%3C/g%3E%3C/svg%3E" />
+    <meta
+      name="description"
+      content="English words that share a Proto-Indo-European root, traced through Wiktionary." />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='3' fill='%23898781'/%3E%3Cg stroke-width='2.5' fill='none' stroke-linecap='round'%3E%3Cpath d='M16 16 C16 9 10 6 6 6' stroke='%232a78d6'/%3E%3Cpath d='M16 16 C23 16 26 10 26 6' stroke='%23eb6834'/%3E%3Cpath d='M16 16 C16 23 22 26 26 26' stroke='%231baf7a'/%3E%3C/g%3E%3C/svg%3E" />
     <script>
       // apply the saved theme before first paint to avoid a flash
       try {
         const t = localStorage.getItem("etymodendron-theme");
-        if (t === "light" || t === "dark") document.documentElement.dataset.theme = t;
+        if (t === "light" || t === "dark")
+          document.documentElement.dataset.theme = t;
       } catch {}
     </script>
   </head>
@@ -28,20 +35,95 @@
         </svg>
         <span>Etymodendron</span>
       </a>
-      <div class="search" role="combobox" aria-haspopup="listbox" aria-owns="search-list" aria-expanded="false">
-        <svg class="search-icon" viewBox="0 0 20 20" width="16" height="16" aria-hidden="true">
-          <circle cx="8.5" cy="8.5" r="5.5" fill="none" stroke="currentColor" stroke-width="2" />
-          <path d="M13 13l4 4" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+      <div
+        class="search"
+        role="combobox"
+        aria-haspopup="listbox"
+        aria-owns="search-list"
+        aria-expanded="false">
+        <svg
+          class="search-icon"
+          viewBox="0 0 20 20"
+          width="16"
+          height="16"
+          aria-hidden="true">
+          <circle
+            cx="8.5"
+            cy="8.5"
+            r="5.5"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2" />
+          <path
+            d="M13 13l4 4"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round" />
         </svg>
-        <input id="search" type="search" autocomplete="off" spellcheck="false" placeholder="Search an English word…"
-          aria-autocomplete="list" aria-controls="search-list" aria-label="Search an English word" disabled />
+        <input
+          id="search"
+          type="search"
+          autocomplete="off"
+          spellcheck="false"
+          placeholder="Search an English word…"
+          aria-autocomplete="list"
+          aria-controls="search-list"
+          aria-label="Search an English word"
+          disabled />
         <ul id="search-list" role="listbox" hidden></ul>
       </div>
-      <button id="theme-toggle" class="icon-btn" type="button" aria-label="Toggle dark mode" title="Toggle dark mode">
+      <button
+        id="about-btn"
+        class="icon-btn"
+        type="button"
+        aria-label="About and FAQ"
+        title="About and FAQ"
+        aria-haspopup="dialog">
         <svg viewBox="0 0 20 20" width="18" height="18" aria-hidden="true">
-          <path class="sun" d="M10 4V2M10 18v-2M4 10H2M18 10h-2M5.8 5.8 4.4 4.4M15.6 15.6l-1.4-1.4M5.8 14.2l-1.4 1.4M15.6 4.4l-1.4 1.4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" />
-          <circle class="sun" cx="10" cy="10" r="3.4" fill="none" stroke="currentColor" stroke-width="1.6" />
-          <path class="moon" d="M15.5 12.5A6.5 6.5 0 0 1 7.5 4.5a6.5 6.5 0 1 0 8 8z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" />
+          <circle
+            cx="10"
+            cy="10"
+            r="7.6"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.6" />
+          <path
+            d="M7.9 7.7a2.2 2.2 0 1 1 3.2 2c-.7.4-1.1.9-1.1 1.7v.3"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.6"
+            stroke-linecap="round" />
+          <circle cx="10" cy="14.4" r="1" fill="currentColor" />
+        </svg>
+      </button>
+      <button
+        id="theme-toggle"
+        class="icon-btn"
+        type="button"
+        aria-label="Toggle dark mode"
+        title="Toggle dark mode">
+        <svg viewBox="0 0 20 20" width="18" height="18" aria-hidden="true">
+          <path
+            class="sun"
+            d="M10 4V2M10 18v-2M4 10H2M18 10h-2M5.8 5.8 4.4 4.4M15.6 15.6l-1.4-1.4M5.8 14.2l-1.4 1.4M15.6 4.4l-1.4 1.4"
+            stroke="currentColor"
+            stroke-width="1.6"
+            stroke-linecap="round" />
+          <circle
+            class="sun"
+            cx="10"
+            cy="10"
+            r="3.4"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.6" />
+          <path
+            class="moon"
+            d="M15.5 12.5A6.5 6.5 0 0 1 7.5 4.5a6.5 6.5 0 1 0 8 8z"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.6"
+            stroke-linejoin="round" />
         </svg>
       </button>
     </header>
@@ -50,25 +132,310 @@
       <section class="stage" aria-label="Etymology tree">
         <nav class="crumbs" id="crumbs" aria-label="Path from the root"></nav>
         <div class="controls">
-          <div class="legend" id="legend" role="group" aria-label="Branches"></div>
-          <label class="toggle"><input type="checkbox" id="affix-toggle" /> <span>Include words formed with an affix</span></label>
+          <div
+            class="legend"
+            id="legend"
+            role="group"
+            aria-label="Branches"></div>
+          <label class="toggle"
+            ><input type="checkbox" id="affix-toggle" />
+            <span>Include words formed with an affix</span></label
+          >
         </div>
         <svg id="tree" role="img" aria-label="Radial etymology tree"></svg>
         <div class="zoom-btns">
-          <button class="icon-btn" id="zoom-in" type="button" aria-label="Zoom in">+</button>
-          <button class="icon-btn" id="zoom-out" type="button" aria-label="Zoom out">−</button>
-          <button class="icon-btn" id="zoom-fit" type="button" aria-label="Fit to screen" title="Fit to screen">
-            <svg viewBox="0 0 20 20" width="16" height="16" aria-hidden="true"><path d="M3 7V3h4M13 3h4v4M17 13v4h-4M7 17H3v-4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" /></svg>
+          <button
+            class="icon-btn"
+            id="zoom-in"
+            type="button"
+            aria-label="Zoom in">
+            +
+          </button>
+          <button
+            class="icon-btn"
+            id="zoom-out"
+            type="button"
+            aria-label="Zoom out">
+            −
+          </button>
+          <button
+            class="icon-btn"
+            id="zoom-fit"
+            type="button"
+            aria-label="Fit to screen"
+            title="Fit to screen">
+            <svg viewBox="0 0 20 20" width="16" height="16" aria-hidden="true">
+              <path
+                d="M3 7V3h4M13 3h4v4M17 13v4h-4M7 17H3v-4"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.8"
+                stroke-linecap="round" />
+            </svg>
           </button>
         </div>
         <div class="tooltip" id="tooltip" role="tooltip" hidden></div>
         <div class="status" id="status" aria-live="polite"></div>
       </section>
       <aside class="panel" id="panel" aria-label="Details">
-        <button class="sheet-handle" id="sheet-handle" type="button" aria-label="Expand or collapse details"></button>
+        <button
+          class="sheet-handle"
+          id="sheet-handle"
+          type="button"
+          aria-label="Expand or collapse details"></button>
         <div class="panel-body" id="panel-body"></div>
       </aside>
     </main>
+    <dialog id="about" class="about" aria-labelledby="about-title">
+      <header class="about-head">
+        <h2 id="about-title">About Etymodendron</h2>
+        <button
+          class="icon-btn"
+          type="button"
+          id="about-close"
+          aria-label="Close">
+          ×
+        </button>
+      </header>
+      <div class="about-body">
+        <p class="about-lede">
+          Every English word in the tree comes from the ancient word or root at
+          the centre — usually reconstructed
+          <strong>Proto-Indo-European</strong>, the ancestor of most European
+          and many Asian languages, spoken around 6,000 years ago. Older stages
+          sit on the inner rings; modern English words on the outer ring.
+        </p>
+
+        <h3>Reading the tree</h3>
+        <details>
+          <summary>What do the colours mean?</summary>
+          <p>
+            The family of languages a word passed through on its way to English:
+          </p>
+          <ul class="about-keys">
+            <li>
+              <span class="key b-germanic"></span> <strong>Germanic</strong> —
+              Old English, Old Norse…
+            </li>
+            <li>
+              <span class="key b-romance"></span>
+              <strong>Latin &amp; Romance</strong> — Latin, French, Italian…
+            </li>
+            <li><span class="key b-greek"></span> <strong>Greek</strong></li>
+            <li>
+              <span class="key b-other"></span> <strong>Other</strong> — Celtic,
+              Sanskrit, Slavic…
+            </li>
+          </ul>
+          <p>
+            The colour is set by the first language after Proto-Indo-European,
+            so <em>patriot</em> (Greek → Latin → French → English) counts as
+            Greek.
+          </p>
+        </details>
+        <details>
+          <summary>Why are some lines dashed?</summary>
+          <p>
+            Wiktionary itself is unsure about that step: it says “possibly”,
+            “perhaps” or “?”, or offers competing theories. Click the word to
+            read the exact wording.
+          </p>
+        </details>
+        <details>
+          <summary>
+            What are the faint grey lines straight from the centre?
+          </summary>
+          <p>
+            Wiktionary names the root for these words but doesn’t say which
+            languages they passed through. Rather than guess a route, the site
+            draws none.
+          </p>
+        </details>
+        <details>
+          <summary>What’s a “surprising cognate”?</summary>
+          <p>
+            Two English words from the same ancient root that arrived by
+            different routes: <em>father</em> is native Germanic,
+            <em>paternal</em> came through Latin, <em>patriot</em> through
+            Greek. Use “Highlight on tree” in the panel to see their routes side
+            by side.
+          </p>
+        </details>
+        <details>
+          <summary>What does the asterisk mean, as in *ph₂tḗr?</summary>
+          <p>
+            The word is reconstructed: nobody ever wrote it down, but linguists
+            worked it out by comparing its descendants. The odd letters (ʰ, ₂,
+            ḱ) are the standard notation for its sounds.
+          </p>
+        </details>
+        <details>
+          <summary>
+            Inherited, borrowed, derived — what’s the difference?
+          </summary>
+          <ul>
+            <li>
+              <strong>Inherited</strong>: passed down naturally from parent to
+              child language (Old English → English).
+            </li>
+            <li>
+              <strong>Borrowed</strong>: taken from another language (English
+              took <em>beef</em> from French).
+            </li>
+            <li>
+              <strong>Derived</strong>: formed from another word in a way the
+              source doesn’t spell out.
+            </li>
+            <li>
+              <strong>Formed from</strong>: built from parts, like a compound or
+              a word with a prefix.
+            </li>
+          </ul>
+        </details>
+        <details>
+          <summary>What does the “+” after a word mean?</summary>
+          <p>
+            Other English words are built on it: <em>father +</em> includes
+            <em>fatherhood</em>, <em>godfather</em> and more. Click the word to
+            see them.
+          </p>
+        </details>
+
+        <h3>Missing or strange words</h3>
+        <details>
+          <summary>Why can’t I find my word?</summary>
+          <p>
+            Only words whose ancestry Wiktionary traces back to
+            Proto-Indo-European are included — about a third of everyday
+            vocabulary. Words are left out when their history stops at
+            Proto-Germanic, when they come from another family (<em>coffee</em>
+            from Arabic, <em>tomato</em> from Nahuatl), when their origin is
+            unknown, or when the Wiktionary entry tells the history only in
+            plain prose the site can’t read reliably.
+          </p>
+        </details>
+        <details>
+          <summary>Why does a word appear under two different roots?</summary>
+          <p>
+            Compounds have several roots (<em>television</em> is a Greek part
+            plus a Latin part), and some words have competing theories. Each is
+            marked, and uncertain ones are flagged.
+          </p>
+        </details>
+        <details>
+          <summary>Why is “bear” there twice?</summary>
+          <p>
+            They are two different words spelled the same: <em>bear</em> the
+            animal and <em>bear</em> “to carry” have separate histories, and the
+            site keeps them apart.
+          </p>
+        </details>
+
+        <details>
+          <summary>Why are words like “reconstruction” hidden?</summary>
+          <p>
+            Words that reach a root only through a common prefix or suffix
+            (<em>re-</em>, <em>-tion</em>) would bury the interesting links.
+            Tick “Include words formed with an affix” to show them.
+          </p>
+        </details>
+
+        <h3>Accuracy</h3>
+        <details>
+          <summary>Where does this come from, and is it reliable?</summary>
+          <p>
+            Everything comes from the
+            <a
+              href="https://en.wiktionary.org/"
+              target="_blank"
+              rel="noopener noreferrer"
+              >English Wiktionary</a
+            >, extracted by
+            <a
+              href="https://kaikki.org/"
+              target="_blank"
+              rel="noopener noreferrer"
+              >kaikki.org</a
+            >. Nothing is invented: if Wiktionary doesn’t state a link, it isn’t
+            drawn, and every hedge in its wording is shown as uncertain.
+            Wiktionary is written by volunteers and its quality varies, so treat
+            this as a map to explore rather than an authority — every step links
+            to the original entry.
+          </p>
+        </details>
+        <details>
+          <summary>I found a mistake. How do I report it?</summary>
+          <p>
+            If the etymology itself is wrong, fix it on Wiktionary: it will
+            appear here the next time the data is rebuilt.<span
+              id="about-report"
+              hidden>
+              If Wiktionary is right but the site shows it wrongly,
+              <a
+                id="about-report-link"
+                target="_blank"
+                rel="noopener noreferrer"
+                >report it here</a
+              >.</span
+            >
+          </p>
+        </details>
+        <details>
+          <summary>How up to date is it?</summary>
+          <p id="about-date">
+            It reflects a snapshot of Wiktionary; edits made since then aren’t
+            included yet.
+          </p>
+        </details>
+        <details>
+          <summary>
+            Why does a Wiktionary link sometimes go to a missing page?
+          </summary>
+          <p>
+            Old forms are often written with marks (macrons, accents) that the
+            page title drops, or the form has no page of its own yet. Those
+            steps are labelled “no page under this form”.
+          </p>
+        </details>
+
+        <h3>Using the site</h3>
+        <details>
+          <summary>How do I get around?</summary>
+          <ul>
+            <li>Type a word in the search box (or press <kbd>/</kbd>).</li>
+            <li>
+              Click a word for its full history; click an older form to put it
+              at the centre — the trail at the top leads back.
+            </li>
+            <li>Click a branch name to show only that branch.</li>
+            <li>
+              Drag to pan; pinch or scroll to zoom. Small labels appear as you
+              zoom in.
+            </li>
+          </ul>
+        </details>
+        <details>
+          <summary>Can I share what I’m looking at?</summary>
+          <p>
+            Yes — the address bar always matches the current view, including the
+            selected word. Copy the link.
+          </p>
+        </details>
+        <details>
+          <summary>Can I reuse the data?</summary>
+          <p>
+            Yes, under
+            <a
+              href="https://creativecommons.org/licenses/by-sa/4.0/"
+              target="_blank"
+              rel="noopener noreferrer"
+              >CC BY-SA 4.0</a
+            >: credit Wiktionary and its contributors, and share any adaptations
+            under the same license.
+          </p>
+        </details>
+      </div>
+    </dialog>
     <script type="module" src="/src/main.ts"></script>
   </body>
 </html>
