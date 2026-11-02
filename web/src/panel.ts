@@ -252,8 +252,12 @@ function chainList(nodes: VNode[], ctx: PanelContext) {
   return ol;
 }
 
+// the site's author, credited under every panel and in the About dialog (index.html)
+const AUTHOR = { name: "Luan Pham", url: "https://github.com/luangia" };
+
 function sourceNote(e?: Edge) {
-  const p = h("p", "source-note", "Data: ", extLink("https://en.wiktionary.org/", "English Wiktionary", "plain-link"),
+  const p = h("p", "source-note", "Made by ", extLink(AUTHOR.url, AUTHOR.name, "plain-link"), ". ",
+    "Data: ", extLink("https://en.wiktionary.org/", "English Wiktionary", "plain-link"),
     " contributors, via ", extLink("https://kaikki.org/", "kaikki.org", "plain-link"), " · ",
     extLink("https://creativecommons.org/licenses/by-sa/4.0/", "CC BY-SA 4.0", "plain-link"), ".");
   if (e?.sources?.length) p.append(` Last step stated on: ${e.sources.join(", ")}.`);
