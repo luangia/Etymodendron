@@ -13,7 +13,7 @@ followed and the node is recorded as an ambiguous homograph.
 import json
 import os
 import sys
-from collections import defaultdict
+from collections import defaultdict, deque
 
 from etl.normalize import TitleIndex, canonical_lang
 
@@ -268,41 +268,50 @@ class Graph:
                        for r, (s, _) in res.items())
 
     def walk_reason(self, g):
-        """Why an English section reaches no PIE node (best effort, for the report)."""
+        """Why an English section reaches no PIE node, and the node where its history stops.
+
+        Returns (reason, node key or None). Best effort, for the report and the site's search.
+        """
         grp = self.groups[g]
         if not grp["has_ety"]:
-            return "no_etymology"
+            return "no_etymology", None
         if not grp["edges"]:
-            return "unknown_origin" if grp["unk"] else "no_ancestry_templates"
-        seen, todo, reasons = set(), [(f"{g[0]}|{g[1]}", g)], set()
+            return ("unknown_origin" if grp["unk"] else "no_ancestry_templates"), None
+        start = f"{g[0]}|{g[1]}"
+        seen, todo, found = set(), deque([(start, g, 0)]), {}
+        deepest = (0, None)
         while todo and len(seen) < 5000:
-            node, grp_key = todo.pop()
+            node, grp_key, depth = todo.popleft()  # breadth-first: nodes are first met at their nearest
             if (node, grp_key) in seen:
                 continue
             seen.add((node, grp_key))
             lang = node_lang(node)
+            if depth > deepest[0]:
+                deepest = (depth, node)
             if lang == PIE and pie_kind(node_term(node)) == "suffix":
-                reasons.add("pie_suffix_only")
-            elif lang.endswith("-pro"):
-                reasons.add("proto_language_no_pie")
+                found.setdefault("pie_suffix_only", node)
+            elif lang.endswith("-pro") and depth < found.get("_proto_depth", 1 << 30):
+                # the nearest proto-language is the one on the main chain; deeper ones tend to come
+                # from side remarks (cat: Proto-West Germanic, not a Proto-Uralic comparison)
+                found["proto_language_no_pie"], found["_proto_depth"] = node, depth
             edges = (self.groups[grp_key]["edges"] if grp_key else []) + self.foreign.get(node, []) \
                 + self.local.get(g, {}).get(node, [])
             if not edges and grp_key is None and node not in self.titles.exact:
-                reasons.add("chain_broken_unresolved")
+                found.setdefault("chain_broken_unresolved", node)
             for e in edges:
                 p = e["p"]
                 gs = self.groups_of.get(p, [])
                 hit = [x for x in gs if e.get("pid") and e["pid"] in self.groups[x]["ids"]]
                 if len(gs) == 1 or len(hit) == 1:
-                    todo.append((p, (hit or gs)[0]))
+                    todo.append((p, (hit or gs)[0], depth + 1))
                 elif gs and self.ambiguous.get(p):
-                    reasons.add("ambiguous_homograph")
-                    todo.append((p, None))
+                    found.setdefault("ambiguous_homograph", p)
+                    todo.append((p, None, depth + 1))
                 elif gs:
-                    todo.extend((p, x) for x in gs)
+                    todo.extend((p, x, depth + 1) for x in gs)
                 else:
-                    todo.append((p, None))
+                    todo.append((p, None, depth + 1))
         for r in ("pie_suffix_only", "ambiguous_homograph", "proto_language_no_pie", "chain_broken_unresolved"):
-            if r in reasons:
-                return r
-        return "non_pie_or_incomplete"
+            if r in found:
+                return r, found[r]
+        return "non_pie_or_incomplete", deepest[1]

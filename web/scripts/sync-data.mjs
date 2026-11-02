@@ -15,7 +15,8 @@ if (!existsSync(join(src, "index.json"))) {
 }
 const fresh = existsSync(join(dest, "index.json")) &&
   statSync(join(dest, "index.json")).mtimeMs >= statSync(join(src, "index.json")).mtimeMs &&
-  files.every((f) => existsSync(join(dest, f)));
+  files.every((f) => existsSync(join(dest, f))) &&
+  existsSync(join(src, "unrooted")) === existsSync(join(dest, "unrooted"));
 if (fresh) {
   console.log("public/data is up to date");
 } else {
@@ -23,6 +24,7 @@ if (fresh) {
   mkdirSync(dest, { recursive: true });
   for (const f of files) cpSync(join(src, f), join(dest, f));
   cpSync(join(src, "roots"), join(dest, "roots"), { recursive: true });
+  if (existsSync(join(src, "unrooted"))) cpSync(join(src, "unrooted"), join(dest, "unrooted"), { recursive: true });
   console.log(`copied ${src} -> public/data`);
 }
 

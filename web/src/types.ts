@@ -60,3 +60,16 @@ export interface SearchIndex {
 
 /** "unknown": linked straight to the PIE root, with no route through other languages stated */
 export type Branch = "germanic" | "romance" | "greek" | "other" | "unknown";
+
+/** data/unrooted/<letter>.json: English words with no PIE root. Row: [word, reason index, stop lang?, stop term?] */
+export interface UnrootedShard {
+  reasons: string[];
+  words: [string, number, string?, string?][];
+}
+
+export interface UnrootedInfo {
+  reason: string;
+  /** where the traced history stops, when known */
+  lang?: string;
+  term?: string;
+}

@@ -150,7 +150,8 @@ def write_outputs(G, outdir, members, per_group, tops):
         if hits:
             words[g[1]].extend(sorted(hits, key=lambda h: (h[2], h[0])))
         elif G.groups[g]["lemma"]:
-            unrooted[g[1]].append([g[2], G.walk_reason(g)])
+            reason, stop = G.walk_reason(g)
+            unrooted[g[1]].append([g[2], reason, stop])
     for w in words:
         etyms = {h[1] for h in words[w]}
         if len(etyms) > 1:
@@ -164,4 +165,42 @@ def write_outputs(G, outdir, members, per_group, tops):
         json.dump(index, f, ensure_ascii=False, separators=(",", ":"))
     with open(os.path.join(outdir, "unrooted.json"), "w", encoding="utf-8") as f:
         json.dump(dict(sorted(unrooted.items())), f, ensure_ascii=False, separators=(",", ":"))
+    write_unrooted_search(outdir, unrooted, words)
     return index, unrooted
+
+
+UNROOTED_REASONS = ["no_etymology", "no_ancestry_templates", "unknown_origin", "non_pie_or_incomplete",
+                    "proto_language_no_pie", "chain_broken_unresolved", "ambiguous_homograph", "pie_suffix_only"]
+
+
+def search_fold(word):
+    """Case- and accent-insensitive key; must match fold() in web/src/search.ts."""
+    return "".join(c for c in unicodedata.normalize("NFD", word) if not unicodedata.combining(c)).lower()
+
+
+def shard_of(word):
+    c = search_fold(word)[:1]
+    return c if "a" <= c <= "z" else "_"
+
+
+def write_unrooted_search(outdir, unrooted, rooted):
+    """unrooted/<letter>.json: English words with no PIE root and why, so search can still answer.
+
+    One file per first letter, so the site fetches only what the typed prefix needs.
+    Row: [word, reason index, stop language, stop term] (stop = where the traced history ends).
+    """
+    shards = defaultdict(list)
+    for w, secs in unrooted.items():
+        if w in rooted:
+            continue
+        _, reason, stop = secs[0]
+        row = [w, UNROOTED_REASONS.index(reason)]
+        if stop and not stop.startswith("en|"):
+            row += [node_lang(stop), display(stop)]
+        shards[shard_of(w)].append(row)
+    d = os.path.join(outdir, "unrooted")
+    os.makedirs(d, exist_ok=True)
+    for k, rows in shards.items():
+        rows.sort(key=lambda r: (search_fold(r[0]), r[0]))
+        with open(os.path.join(d, f"{k}.json"), "w", encoding="utf-8") as f:
+            json.dump({"reasons": UNROOTED_REASONS, "words": rows}, f, ensure_ascii=False, separators=(",", ":"))

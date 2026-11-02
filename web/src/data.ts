@@ -1,4 +1,4 @@
-import type { Branch, Edge, RootDoc, SearchIndex, TreeNode } from "./types";
+import type { Branch, Edge, RootDoc, SearchIndex, TreeNode, UnrootedShard } from "./types";
 
 const BASE = `${import.meta.env.BASE_URL}data/`;
 
@@ -9,6 +9,8 @@ async function getJSON<T>(path: string): Promise<T> {
 }
 
 export const loadIndex = () => getJSON<SearchIndex>("index.json");
+
+export const loadUnrootedShard = (letter: string) => getJSON<UnrootedShard>(`unrooted/${letter}.json`);
 
 /** Written by scripts/sync-data.mjs: the date of the Wiktionary dump the data was built from. */
 export const loadBuildInfo = () => getJSON<{ dump_date: string | null; built: string }>("build.json");

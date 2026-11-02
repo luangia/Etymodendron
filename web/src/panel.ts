@@ -2,7 +2,7 @@ import {
   ancestry, BRANCH_LABEL, BRANCHES, branchCounts, crossBranch, EDGE_LABEL, langName, wiktionaryUrl, type VNode,
 } from "./data";
 import { orderHits } from "./search";
-import type { Branch, Edge, IndexHit, RootDoc, RootMeta } from "./types";
+import type { Branch, Edge, IndexHit, RootDoc, RootMeta, UnrootedInfo } from "./types";
 
 export interface PanelContext {
   doc: RootDoc;
@@ -258,4 +258,67 @@ function sourceNote(e?: Edge) {
     extLink("https://creativecommons.org/licenses/by-sa/4.0/", "CC BY-SA 4.0", "plain-link"), ".");
   if (e?.sources?.length) p.append(` Last step stated on: ${e.sources.join(", ")}.`);
   return p;
+}
+
+// --------------------------------------------------------------- words with no root
+
+/** Plain-language reason a word reaches no Proto-Indo-European root, from the pipeline's reason code. */
+function unrootedReason(info: UnrootedInfo): Child[] {
+  const stop = info.lang && info.term ? `${langName(info.lang)} ${info.term}` : null;
+  switch (info.reason) {
+    case "no_etymology":
+      return ["Wiktionary doesn’t have an etymology for this word yet."];
+    case "no_ancestry_templates":
+      return ["Wiktionary explains where it comes from only in plain prose, which the site doesn’t read, ",
+        "so it can’t draw a reliable route."];
+    case "unknown_origin":
+      return ["Wiktionary lists its origin as unknown or uncertain."];
+    case "proto_language_no_pie":
+      return stop
+        ? ["It is traced back to ", h("strong", "", stop), ", but no older Proto-Indo-European root is known."]
+        : ["It is traced back to a proto-language, but no older Proto-Indo-European root is known."];
+    case "chain_broken_unresolved":
+      return stop
+        ? ["Its history stops at ", h("strong", "", stop), ", a form with no Wiktionary entry of its own, so the trail ends there."]
+        : ["Its history stops at a form with no Wiktionary entry of its own."];
+    case "ambiguous_homograph":
+      return stop
+        ? ["Its history leads to ", h("strong", "", stop), ", a page with several unrelated words of that spelling. ",
+          "The entry doesn’t say which one is meant, so the site doesn’t guess."]
+        : ["Its history leads to a page with several unrelated words of the same spelling, and the site doesn’t guess which."];
+    case "pie_suffix_only":
+      return [`It traces only to a Proto-Indo-European suffix${info.term ? ` (${info.term})` : ""}, not to a root.`];
+    default: // non_pie_or_incomplete
+      return stop
+        ? ["Its known history goes back to ", h("strong", "", stop), ", with no Proto-Indo-European root beyond that. ",
+          "Often this means the word comes from outside the Indo-European family."]
+        : ["Its known history stops before reaching Proto-Indo-European."];
+  }
+}
+
+export function renderUnrootedPanel(body: HTMLElement, word: string, info: UnrootedInfo) {
+  body.replaceChildren();
+  const head = h("header", "phead",
+    h("div", "eyebrow", "English"),
+    h("h2", "pterm", word),
+    extLink(wiktionaryUrl("en", word), "Wiktionary ↗"));
+  body.append(head,
+    h("div", "arrival", h("span", "type-badge", "No root found"),
+      h("p", "unrooted-why", ...unrootedReason(info))));
+  if (info.lang && info.term) {
+    body.append(section("Where the trail ends",
+      h("div", "step-row solo", h("span", "step-lang", langName(info.lang)), extLink(wiktionaryUrl(info.lang, info.term), `${info.term} ↗`))));
+  }
+  body.append(h("p", "muted small", "The tree shows only words Wiktionary traces back to Proto-Indo-European. ",
+    "If you know this word’s history, adding it to Wiktionary will bring it here on the next data update."),
+    sourceNote());
+}
+
+export function renderMissPanel(body: HTMLElement, query: string) {
+  body.replaceChildren(
+    h("header", "phead", h("div", "eyebrow", "Not found"), h("h2", "pterm", query)),
+    h("p", "", "There is no English entry spelled like this in the Wiktionary data the site uses."),
+    h("p", "muted small", "Check the spelling, or try the base form (“run” rather than “running”)."),
+    extLink(`https://en.wiktionary.org/w/index.php?search=${encodeURIComponent(query)}`, "Search Wiktionary ↗"),
+    sourceNote());
 }

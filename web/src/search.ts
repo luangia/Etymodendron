@@ -1,10 +1,13 @@
-import type { IndexHit, SearchIndex } from "./types";
+import { loadUnrootedShard } from "./data";
+import type { IndexHit, SearchIndex, UnrootedInfo, UnrootedShard } from "./types";
 
 const MAX_RESULTS = 8;
 
 export interface Suggestion {
   word: string;
   hits: IndexHit[];
+  /** set when the word is in Wiktionary but reaches no PIE root */
+  unrooted?: UnrootedInfo;
 }
 
 /**
@@ -16,12 +19,32 @@ export function orderHits(hits: IndexHit[]): IndexHit[] {
   return hits.map((h, i) => [h, i] as const).sort((a, b) => rank(a[0]) - rank(b[0]) || a[1] - b[1]).map(([h]) => h);
 }
 
+// must match search_fold() in etl/export.py, which names the unrooted shards
 const fold = (s: string) => s.normalize("NFD").replace(/\p{M}/gu, "").toLowerCase();
+const shardOf = (key: string) => (key[0] >= "a" && key[0] <= "z" ? key[0] : "_");
+
+function lowerBound(keys: string[], key: string) {
+  let lo = 0, hi = keys.length;
+  while (lo < hi) {
+    const mid = (lo + hi) >> 1;
+    if (keys[mid] < key) lo = mid + 1;
+    else hi = mid;
+  }
+  return lo;
+}
+
+interface LoadedShard {
+  keys: string[];
+  rows: UnrootedShard["words"];
+  reasons: string[];
+}
 
 /** Prefix search over every English word in the index, accent- and case-insensitive. */
 export class WordSearch {
   private keys: string[];
   private words: string[];
+  private shards = new Map<string, LoadedShard | null>();
+  private pending = new Map<string, Promise<void>>();
 
   constructor(private index: SearchIndex) {
     const entries = Object.keys(index.words).map((w) => [fold(w), w] as const);
@@ -30,25 +53,65 @@ export class WordSearch {
     this.words = entries.map((e) => e[1]);
   }
 
+  /**
+   * Fetch the unrooted words for this query's first letter, if not loaded yet.
+   * Returns null when nothing needs loading; failures just leave search to rooted words.
+   */
+  ensureShard(q: string): Promise<void> | null {
+    const key = fold(q.trim());
+    if (!key) return null;
+    const k = shardOf(key);
+    if (this.shards.has(k)) return null;
+    let p = this.pending.get(k);
+    if (!p) {
+      p = loadUnrootedShard(k)
+        .then((d) => {
+          const rows = d.words.map((r) => [fold(r[0]), r] as const);
+          rows.sort((a, b) => (a[0] < b[0] ? -1 : a[0] > b[0] ? 1 : 0));
+          this.shards.set(k, { keys: rows.map((r) => r[0]), rows: rows.map((r) => r[1]), reasons: d.reasons });
+        })
+        .catch(() => void this.shards.set(k, null))
+        .finally(() => this.pending.delete(k));
+      this.pending.set(k, p);
+    }
+    return p;
+  }
+
   query(q: string): Suggestion[] {
     const key = fold(q.trim());
     if (!key) return [];
-    let lo = 0, hi = this.keys.length;
-    while (lo < hi) {
-      const mid = (lo + hi) >> 1;
-      if (this.keys[mid] < key) lo = mid + 1;
-      else hi = mid;
+    const found: Suggestion[] = [];
+    for (let i = lowerBound(this.keys, key); i < this.keys.length && found.length < 400 && this.keys[i].startsWith(key); i++) {
+      const word = this.words[i];
+      found.push({ word, hits: orderHits(this.index.words[word]) });
     }
-    const found: string[] = [];
-    for (let i = lo; i < this.keys.length && found.length < 400 && this.keys[i].startsWith(key); i++) {
-      found.push(this.words[i]);
+    const shard = this.shards.get(shardOf(key));
+    if (shard) {
+      let n = 0;
+      for (let i = lowerBound(shard.keys, key); i < shard.keys.length && n < 400 && shard.keys[i].startsWith(key); i++, n++) {
+        found.push({ word: shard.rows[i][0], hits: [], unrooted: this.info(shard, shard.rows[i]) });
+      }
     }
-    // exact match first, then plain lowercase words, then shorter
-    const rank = (w: string) => (fold(w) === key ? 0 : 1) * 1000 + (/^[a-z]+$/.test(w) ? 0 : 100) + w.length;
-    return found
-      .sort((a, b) => rank(a) - rank(b) || a.localeCompare(b))
-      .slice(0, MAX_RESULTS)
-      .map((word) => ({ word, hits: orderHits(this.index.words[word]) }));
+    // exact match first, then plain lowercase words, then shorter; a word without a root counts as
+    // three letters longer, so "coffee" still comes before "coffeeless" but loses ties to rooted words
+    const rank = (s: Suggestion) => (fold(s.word) === key ? 0 : 1) * 1000 + (s.unrooted ? 3 : 0) +
+      (/^[a-z]+$/.test(s.word) ? 0 : 100) + s.word.length;
+    return found.sort((a, b) => rank(a) - rank(b) || a.word.localeCompare(b.word)).slice(0, MAX_RESULTS);
+  }
+
+  /** Exact lookup of a word with no root (for shared links). */
+  async lookupUnrooted(word: string): Promise<UnrootedInfo | null> {
+    await this.ensureShard(word);
+    const shard = this.shards.get(shardOf(fold(word)));
+    if (!shard) return null;
+    for (let i = lowerBound(shard.keys, fold(word)); i < shard.keys.length && shard.keys[i] === fold(word); i++) {
+      if (shard.rows[i][0] === word) return this.info(shard, shard.rows[i]);
+    }
+    return null;
+  }
+
+  private info(shard: LoadedShard, row: UnrootedShard["words"][number]): UnrootedInfo {
+    return { reason: shard.reasons[row[1]] ?? "unknown", lang: row[2], term: row[3] };
   }
 
   has(word: string) {
@@ -63,6 +126,7 @@ export function attachSearch(
   search: WordSearch,
   rootTerm: (hit: IndexHit) => string,
   onPick: (s: Suggestion) => void,
+  onMiss: (query: string) => void,
 ) {
   const box = input.parentElement!;
   let items: Suggestion[] = [];
@@ -87,8 +151,13 @@ export function attachSearch(
       w.textContent = s.word;
       const r = document.createElement("span");
       r.className = "sugg-roots";
-      const shown = s.hits.slice(0, 2);
-      r.textContent = shown.map(rootTerm).join(" · ") + (s.hits.length > shown.length ? ` +${s.hits.length - shown.length}` : "");
+      if (s.unrooted) {
+        r.classList.add("none");
+        r.textContent = "no PIE root";
+      } else {
+        const shown = s.hits.slice(0, 2);
+        r.textContent = shown.map(rootTerm).join(" · ") + (s.hits.length > shown.length ? ` +${s.hits.length - shown.length}` : "");
+      }
       li.append(w, r);
       li.addEventListener("pointerdown", (ev) => {
         ev.preventDefault();
@@ -111,10 +180,17 @@ export function attachSearch(
     onPick(s);
   };
 
-  input.addEventListener("input", () => {
+  const refresh = () => {
     items = search.query(input.value);
     active = items.length ? 0 : -1;
     paint();
+  };
+  input.addEventListener("input", () => {
+    refresh();
+    const q = input.value;
+    search.ensureShard(q)?.then(() => {
+      if (input.value === q) refresh();
+    });
   });
   input.addEventListener("keydown", (ev) => {
     if (ev.key === "ArrowDown" || ev.key === "ArrowUp") {
@@ -124,7 +200,19 @@ export function attachSearch(
       paint();
     } else if (ev.key === "Enter") {
       ev.preventDefault();
-      pick(active >= 0 ? active : 0);
+      if (items.length) pick(active >= 0 ? active : 0);
+      else if (input.value.trim()) {
+        const q = input.value.trim();
+        // the shard may still be loading: wait for it before saying the word isn't there
+        Promise.resolve(search.ensureShard(q)).then(() => {
+          items = search.query(q);
+          if (items.length && fold(items[0].word) === fold(q)) pick(0);
+          else {
+            close();
+            onMiss(q);
+          }
+        });
+      }
     } else if (ev.key === "Escape") {
       close();
     }

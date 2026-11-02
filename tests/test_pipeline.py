@@ -273,3 +273,19 @@ def test_root_reached_through_greek_branch(tmp_path):
     assert [G.edges[e].parent for e in path] == ["grc|καρκίνος", "ine-pro|(s)ker-"] and score[0] == 0
     hits = {index["roots"][h[0]]["term"]: h[2] for h in index["words"]["carcino-"]}
     assert hits == {"*(s)ker-": 0, "*karkros": 1}
+
+
+def test_unrooted_words_are_searchable_with_reason(tmp_path):
+    lines = [
+        entry("en", "coffee", [T("bor", "Ottoman Turkish قهوه", _1="en", _2="ota", _3="قهوه")],
+              "Borrowed from Ottoman Turkish قهوه."),
+        entry("ota", "قهوه", [T("bor", "Arabic قَهْوَة", _1="ota", _2="ar", _3="قَهْوَة")], "From Arabic قَهْوَة."),
+        entry("ar", "قهوة"),  # page title without vowel marks: matched diacritic-insensitively
+        entry("en", "zzz", text="Of unknown origin.", templates=[T("unk", _1="en")]),
+    ]
+    G, members, tops, index, unrooted = build(tmp_path, lines)
+    c = json.loads((tmp_path / "out" / "unrooted" / "c.json").read_text())
+    row = c["words"][0]
+    assert row[0] == "coffee" and c["reasons"][row[1]] == "non_pie_or_incomplete" and row[2] == "ar"
+    z = json.loads((tmp_path / "out" / "unrooted" / "z.json").read_text())
+    assert z["words"] == [["zzz", z["reasons"].index("unknown_origin")]]

@@ -144,6 +144,7 @@ a { color: var(--accent); }
 .search li[aria-selected="true"], .search li:hover { background: var(--surface-2); }
 .sugg-word { font-weight: 600; }
 .sugg-roots { color: var(--muted); font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.sugg-roots.none { font-style: italic; }
 
 .icon-btn {
   display: inline-grid;
@@ -363,6 +364,8 @@ a { color: var(--accent); }
 
 .arrival { background: var(--surface-2); border-radius: 10px; padding: 10px 12px; margin-bottom: 4px; }
 .arrival em { font-style: normal; font-weight: 600; }
+.unrooted-why { margin: 8px 0 0; color: var(--ink-2); }
+.step-row.solo { margin-left: 0; display: flex; gap: 8px; align-items: baseline; }
 .arrival .small { margin-top: 4px; }
 .type-badge {
   display: inline-block;

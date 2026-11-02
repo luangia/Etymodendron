@@ -3,10 +3,10 @@ import {
   ancestry, BRANCH_LABEL, BRANCHES, branchCounts, buildView, findById, findWord, langName, loadBuildInfo, loadIndex,
   loadLanguages, loadRoot, type VNode,
 } from "./data";
-import { renderRootPanel, renderWordPanel, type PanelContext } from "./panel";
+import { renderMissPanel, renderRootPanel, renderUnrootedPanel, renderWordPanel, type PanelContext } from "./panel";
 import { attachSearch, WordSearch } from "./search";
 import { RadialTree } from "./tree";
-import type { Branch, IndexHit, RootDoc, RootMeta, SearchIndex } from "./types";
+import type { Branch, IndexHit, RootDoc, RootMeta, SearchIndex, UnrootedInfo } from "./types";
 
 const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
 const els = {
@@ -36,6 +36,8 @@ interface State {
   selected: VNode | null;
   includeAffix: boolean;
   pinnedBranch: Branch | null;
+  /** a searched word that has no tree to show: the panel explains why */
+  note: { kind: "unrooted"; word: string; info: UnrootedInfo } | { kind: "miss"; query: string } | null;
 }
 let S: State;
 let loadToken = 0;
@@ -44,7 +46,9 @@ const tree = new RadialTree(els.svg, els.tooltip, {
   onWord: (v) => selectWord(v),
   onRecenter: (v) => recenter(v),
   onCenter: () => {
-    if (S.selected) selectWord(null);
+    if (!S.selected && !S.note) return;
+    S.note = null;
+    selectWord(null);
   },
 });
 
@@ -71,6 +75,7 @@ async function openRoot(slug: string, word?: string, etym = 0, centerId?: string
   }
   if (token !== loadToken) return; // a newer navigation won
   status("");
+  S.note = null;
 
   // a word that reaches this root only through an affix needs affix paths shown
   if (word && !S.includeAffix) {
@@ -102,6 +107,7 @@ function draw() {
 
 function recenter(v: VNode) {
   if (!S.root) return;
+  S.note = null;
   S.view = v;
   S.selected = null;
   draw();
@@ -109,6 +115,7 @@ function recenter(v: VNode) {
 
 function selectWord(v: VNode | null, focus = false) {
   if (!S.root || !S.view) return;
+  if (v) S.note = null;
   if (v && !ancestry(v).includes(S.view)) {
     // the word is outside the centred subtree: go back to the root view first
     S.view = S.root;
@@ -144,9 +151,21 @@ function showPanel() {
       if (words) expandSheet(false);
     },
   };
-  if (S.selected) renderWordPanel(els.body, ctx, S.selected);
+  if (S.note?.kind === "unrooted") renderUnrootedPanel(els.body, S.note.word, S.note.info);
+  else if (S.note?.kind === "miss") renderMissPanel(els.body, S.note.query);
+  else if (S.selected) renderWordPanel(els.body, ctx, S.selected);
   else renderRootPanel(els.body, ctx);
   els.body.scrollTop = 0;
+}
+
+/** Show a searched word that has no tree (no PIE root, or not in the data at all). */
+function showNote(note: NonNullable<State["note"]>) {
+  S.note = note;
+  S.selected = null;
+  tree.select(null);
+  showPanel();
+  writeHash();
+  expandSheet(true);
 }
 
 // ------------------------------------------------------------------ chrome
@@ -226,13 +245,15 @@ function writeHash() {
     if (S.selected.data.etym) p.set("e", String(S.selected.data.etym));
   }
   if (S.includeAffix) p.set("a", "1");
+  if (S.note?.kind === "unrooted") p.set("u", S.note.word);
   const next = `#${p.toString()}`;
   if (location.hash !== next) history.replaceState(null, "", next);
 }
 
 function readHash() {
   const p = new URLSearchParams(location.hash.slice(1));
-  return { r: p.get("r"), c: p.get("c") ?? undefined, w: p.get("w") ?? undefined, e: Number(p.get("e") ?? 0), a: p.get("a") === "1" };
+  return { r: p.get("r"), c: p.get("c") ?? undefined, w: p.get("w") ?? undefined, e: Number(p.get("e") ?? 0),
+    a: p.get("a") === "1", u: p.get("u") ?? undefined };
 }
 
 // ------------------------------------------------------------------ theme & layout
@@ -343,20 +364,25 @@ async function main() {
     byTerm: new Map(index.roots.map((r) => [r.term, r])),
     bySlug: new Map(index.roots.map((r) => [r.slug, r])),
     meta: null, doc: null, root: null, view: null, selected: null,
-    includeAffix: false, pinnedBranch: null,
+    includeAffix: false, pinnedBranch: null, note: null,
   };
   const search = new WordSearch(index);
   attachSearch(els.search, els.list, search, (h: IndexHit) => index.roots[h[0]].term, (s) => {
+    if (s.unrooted) return showNote({ kind: "unrooted", word: s.word, info: s.unrooted });
     const best = s.hits[0];
     void openRoot(index.roots[best[0]].slug, s.word, best[1]);
-  });
+  }, (query) => showNote({ kind: "miss", query }));
   els.search.disabled = false;
-  els.search.placeholder = `Search ${Object.keys(index.words).length.toLocaleString()} English words…`;
+  els.search.placeholder = "Search an English word…";
 
   const route = readHash();
   if (route.a) setAffix(true, false);
   const start = (route.r && S.bySlug.get(route.r)) || S.byTerm.get(DEFAULT_ROOT) || index.roots[0];
   await openRoot(start.slug, route.w, route.e, route.c);
+  if (route.u && !route.w) {
+    const info = await search.lookupUnrooted(route.u);
+    if (info) showNote({ kind: "unrooted", word: route.u, info });
+  }
   window.addEventListener("hashchange", () => {
     const r = readHash();
     if (r.r && r.r !== S.meta?.slug) void openRoot(r.r, r.w, r.e, r.c);
