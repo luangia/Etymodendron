@@ -101,7 +101,7 @@ def entry(lang, word, templates=(), text="", etym=None, gloss="g", form_of=False
 
 
 def build(tmp_path, lines):
-    sections, pages = process(lines)
+    sections, pages, _ = process(lines)
     work = tmp_path / "work"
     work.mkdir()
     (work / "sections.jsonl").write_text("".join(sections), encoding="utf-8")

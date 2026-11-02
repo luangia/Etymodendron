@@ -1,6 +1,6 @@
-# Etymodendron — data pipeline
+# Etymodendron
 
-Builds static JSON of English words grouped by Proto-Indo-European (PIE) ancestor, from the
+A Python pipeline that builds static JSON of English words grouped by Proto-Indo-European (PIE) ancestor, from the
 English Wiktionary extract published by [kaikki.org](https://kaikki.org) (wiktextract).
 Data is CC BY-SA (Wiktionary); keep attribution when publishing.
 
@@ -11,6 +11,30 @@ python3 -m etl.run        # graph → data/out/ + validation_report.md
 python3 -m pytest tests
 ```
 `python3 -m etl.extract --limit 300000 --out data/work_sample` gives a fast partial run.
+
+## Web app (`web/`)
+
+Vite + TypeScript + D3. A static site that reads the JSON above.
+
+```bash
+cd web
+npm install
+npm run dev       # copies ../data/out into public/data, then serves on :5173
+npm run build     # → web/dist (static; deploy anywhere, works from a sub-path)
+```
+
+- **Search**: prefix autocomplete over every English word in `index.json` (press `/` to focus).
+- **Root view**: radial tree with the PIE node at the centre, intermediate forms on rings by depth,
+  English words on the outer ring. Edge colour = the branch the path took after leaving PIE
+  (Germanic / Latin & Romance / Greek / other); grey = Wiktionary links the word straight to the
+  root without stating a route. Dashed = uncertain step.
+- **Click a word** for its ancestry chain, gloss, link types, and Wiktionary links; **click an
+  intermediate node** to re-centre on it (breadcrumbs lead back).
+- **Surprising cognates**: the panel picks words from the same ancestor that came in through
+  different branches (father / pater / patriot) and can highlight their routes on the tree.
+- English words built on another English word (*fatherhood*) are listed under that word rather
+  than drawn; affix-only paths are hidden unless the checkbox is on.
+- State lives in the URL hash (`#r=<root>&c=<node>&w=<word>`), so views can be shared.
 
 ## How ancestry is read
 
@@ -35,6 +59,8 @@ sections decides it; otherwise the word is listed as unrooted (`ambiguous_homogr
   `sources`). English leaves carry `etym`, `gloss`, `pos`, `path_uncertain`, `via_affix`.
   `parents` lists PIE nodes above this one (e.g. `*ph₂tḗr` → `*peh₂-`, uncertain).
 - `index.json` — `words[word] = [[root index, etymology number, flags]]`, flags 1 = uncertain
-  step on the path, 2 = path goes through an affix (*trans-*, *-ment*); `roots[i]` gives slug and term.
+  step on the path, 2 = path goes through an affix (*trans-*, *-ment*), 4 = linked straight to the
+  root by `{{root}}` (no route stated); `roots[i]` gives slug and term.
+- `languages.json` — language code → name.
 - `unrooted.json` — English lemmas with no PIE ancestor and the reason.
 - `validation_report.md` — coverage, words per root, graph health, sample trees.

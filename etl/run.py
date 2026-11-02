@@ -1,5 +1,7 @@
 """Build graph -> export JSON -> validation report, from data/work (see extract.py)."""
 import argparse
+import os
+import shutil
 import sys
 import threading
 import time
@@ -21,6 +23,7 @@ def main():
     print(f"traced {len(per_group):,} English sections, {len(tops):,} PIE files  {time.time() - t0:.0f}s", file=sys.stderr)
     index, unrooted = write_outputs(G, a.out, members, per_group, tops)
     write_report(G, a.out, members, per_group, tops, index, unrooted)
+    shutil.copy(os.path.join(a.work, "languages.json"), os.path.join(a.out, "languages.json"))
     print(f"done in {time.time() - t0:.0f}s -> {a.out}", file=sys.stderr)
 
 

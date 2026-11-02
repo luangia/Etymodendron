@@ -4,6 +4,7 @@ Outputs (in --out):
   sections.jsonl  one line per (lang, word, etymology_number, pos) entry that has
                   ancestry edges, plus every English entry (for coverage stats)
   pages.tsv       lang \t word \t etymology_number \t has_etymology_text, for every entry
+  languages.json  language code -> name, as wiktextract reports it
 """
 import argparse
 import gzip
@@ -37,7 +38,7 @@ def first_gloss(e):
 
 
 def process(lines):
-    sections, pages = [], []
+    sections, pages, names = [], [], {}
     for line in lines:
         try:
             e = json.loads(line)
@@ -46,6 +47,8 @@ def process(lines):
         lang, word = e.get("lang_code"), e.get("word")
         if not lang or not word:
             continue
+        if e.get("lang"):
+            names.setdefault(lang, e["lang"])
         etym_no = e.get("etymology_number") or 0
         text = e.get("etymology_text") or ""
         templates = e.get("etymology_templates") or []
@@ -65,7 +68,7 @@ def process(lines):
         elif lang.endswith("-pro"):
             rec["gl"] = first_gloss(e)
         sections.append(json.dumps(rec, ensure_ascii=False) + "\n")
-    return sections, pages
+    return sections, pages, names
 
 
 def batches(path, limit):
@@ -91,16 +94,20 @@ def main():
     ap.add_argument("--workers", type=int, default=max(1, (os.cpu_count() or 2) - 1))
     a = ap.parse_args()
     os.makedirs(a.out, exist_ok=True)
-    t0, n_entries, n_sections = time.time(), 0, 0
+    t0, n_entries, n_sections, names = time.time(), 0, 0, {}
     with open(os.path.join(a.out, "sections.jsonl"), "w", encoding="utf-8") as fs, \
             open(os.path.join(a.out, "pages.tsv"), "w", encoding="utf-8") as fp, Pool(a.workers) as pool:
-        for sections, pages in pool.imap(process, batches(a.dump, a.limit), chunksize=4):
+        for sections, pages, batch_names in pool.imap(process, batches(a.dump, a.limit), chunksize=4):
+            for k, v in batch_names.items():
+                names.setdefault(k, v)
             fs.writelines(sections)
             fp.writelines(pages)
             n_entries += len(pages)
             n_sections += len(sections)
             if n_entries % 500_000 < BATCH:
                 print(f"{n_entries:>10,} entries  {n_sections:>9,} kept  {time.time() - t0:6.0f}s", file=sys.stderr, flush=True)
+    with open(os.path.join(a.out, "languages.json"), "w", encoding="utf-8") as f:
+        json.dump(dict(sorted(names.items())), f, ensure_ascii=False, indent=0)
     print(f"done: {n_entries:,} entries, {n_sections:,} kept, {time.time() - t0:.0f}s", file=sys.stderr)
 
 

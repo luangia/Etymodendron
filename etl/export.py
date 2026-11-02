@@ -10,7 +10,7 @@ from etl.graph import PIE, is_bound, node_lang, node_term, pie_kind
 
 ASCII_MAP = str.maketrans({"ʰ": "h", "ʷ": "w", "₁": "1", "₂": "2", "₃": "3", "ₓ": "x", "ǵ": "g", "ḱ": "k",
                            "ʲ": "j", "ə": "e", "þ": "th", "ð": "dh", "æ": "ae", "ŋ": "ng"})
-UNCERTAIN_FLAG, AFFIX_FLAG = 1, 2
+UNCERTAIN_FLAG, AFFIX_FLAG, SHORTCUT_FLAG = 1, 2, 4
 
 
 def slug(term):
@@ -46,6 +46,8 @@ def _path_flags(G, score, path):
     flags = UNCERTAIN_FLAG if score[0] else 0
     if any(is_bound(G.edges[e].parent) and node_lang(G.edges[e].parent) != PIE for e in path[:-1]):
         flags |= AFFIX_FLAG
+    if len(path) == 1 and G.edges[path[0]].type == "root":
+        flags |= SHORTCUT_FLAG  # linked straight to the root by {{root}}: no route through languages
     return flags
 
 
@@ -139,7 +141,8 @@ def write_outputs(G, outdir, members, per_group, tops):
             for e in etyms:
                 glosses[w][str(e)] = G.groups[("en", w, e)]["gl"]
     index = {"format": "word -> [[root index, etymology number (0 = only one), flags]]; "
-                        "flags: 1 = path has an uncertain step, 2 = path goes through an affix",
+                        "flags: 1 = path has an uncertain step, 2 = path goes through an affix, "
+                        "4 = linked straight to the root by a {{root}} template (route not stated)",
              "roots": roots_meta, "words": dict(sorted(words.items())), "glosses": glosses}
     with open(os.path.join(outdir, "index.json"), "w", encoding="utf-8") as f:
         json.dump(index, f, ensure_ascii=False, separators=(",", ":"))
