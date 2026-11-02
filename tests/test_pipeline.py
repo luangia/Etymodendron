@@ -205,3 +205,36 @@ def test_plus_between_links_means_siblings_even_with_from():
     ], text)
     assert [(e["c"], e["p"]) for e in es] == [
         (None, "sa|padga"), ("sa|padga", "ine-pro|ped-"), ("sa|padga", "ine-pro|gʷem-")]
+
+
+def test_etymon_empty_term_uses_alt_and_keeps_nested_chain():
+    es, _ = etymon_edges({"1": "la", "2": ":inh",
+                          "3": "itc-pro:*labjom<ety:der<ine-pro:<alt:*l̥b-yóm><ety:from<ine-pro:*leb->>>>"}, "la")
+    assert [(e["c"], e["p"]) for e in es] == [
+        (None, "itc-pro|labjom"), ("itc-pro|labjom", "ine-pro|l̥b-yóm"), ("ine-pro|l̥b-yóm", "ine-pro|leb-")]
+
+
+def test_etymon_junk_terms_dropped():
+    es, _ = etymon_edges({"1": "la", "2": ":der", "3": "+", "4": "['itc-pro:*x<ref:', <TEMPLATE(['R:x']){} >]",
+                          "5": "ine-pro:*a-"}, "la")
+    assert [e["p"] for e in es] == ["ine-pro|a-"]
+
+
+def test_alternative_theories_mark_section_uncertain():
+    text = "Often supposed to be from *peh₂- + *-tḗr. Alternatively, from a nursery form *pa."
+    es = edges_of([T("suffix", "*peh₂- + *-tḗr", _1="ine-pro", _2="*peh₂-", _3="*-tḗr")], text,
+                  lang="ine-pro", word="ph₂tḗr")
+    assert es and all(e.get("u") for e in es)
+
+
+def test_etymon_uncertainty_wins_over_unhedged_template(tmp_path):
+    lines = [
+        entry("en", "father", [T("inh", "*ph₂tḗr", _1="en", _2="ine-pro", _3="*ph₂tḗr")], "From *ph₂tḗr."),
+        entry("ine-pro", "ph₂tḗr", [T("etymon", _1="ine-pro", _2=":af", _3="*peh₂-<unc:1>", _4="*-tḗr"),
+                                    T("af", "*peh₂- + *-tḗr", _1="ine-pro", _2="*peh₂-", _3="*-tḗr")],
+              "From *peh₂- + *-tḗr."),
+    ]
+    G, members, tops, index, unrooted = build(tmp_path, lines)
+    assert "ine-pro|ph₂tḗr" in tops
+    hits = {index["roots"][h[0]]["term"]: h[2] for h in index["words"]["father"]}
+    assert hits["*peh₂-"] & 1 and not hits["*ph₂tḗr"] & 1

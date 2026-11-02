@@ -145,8 +145,9 @@ class Graph:
         ed.id = len(self.edges)
         ed.child, ed.parent, ed.form, ed.type = child, parent, pick["form"], pick["t"]
         ed.via = {"template": "page"}.get(pick["via"], pick["via"])
-        # several claims for one link: uncertain only if every one of them is hedged
-        ed.uncertain = all(c.get("u") for c in claims)
+        # an explicit {{etymon}} statement decides; otherwise uncertain only if every claim is hedged
+        ety = [c for c in claims if c["via"] == "etymon"]
+        ed.uncertain = any(c.get("u") for c in ety) if ety else all(c.get("u") for c in claims)
         unc = next((c for c in claims if c.get("u")), None)
         ed.evidence = unc.get("ev") if (ed.uncertain and unc) else None
         ed.confirmed = confirmed

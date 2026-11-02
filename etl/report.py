@@ -55,7 +55,7 @@ def write_report(G, outdir, members, per_group, tops, index, unrooted):
     rooted = set(index["words"])
     rooted_lemmas = rooted & lemma_words.keys()
     core = {w for w, gs in lemma_words.items() if is_core(w, gs)}
-    sizes = [r["words"] for r in index["roots"]]
+    sizes = [r["words_incl_affix"] for r in index["roots"]]
     kinds = Counter(r["kind"] for r in index["roots"])
 
     # how each rooted word got there
@@ -116,9 +116,25 @@ def write_report(G, outdir, members, per_group, tops, index, unrooted):
     for lo, hi in buckets:
         L.append(f"| {lo}{'' if lo == hi else ('+' if hi > 10 ** 8 else f'–{hi}')} | "
                  f"{sum(1 for s in sizes if lo <= s <= hi):,} |")
-    L += ["", "Top 25:", "", "| PIE | kind | English words |", "|---|---|---:|"]
+    L += ["", "Sizes count words whose path does not go through an affix; the last column includes them.",
+          "", "Top 25:", "", "| PIE | kind | English words | incl. via affix |", "|---|---|---:|---:|"]
     for r in index["roots"][:25]:
-        L.append(f"| {r['term']} | {r['kind']} | {r['words']:,} |")
+        L.append(f"| {r['term']} | {r['kind']} | {r['words']:,} | {r['words_incl_affix']:,} |")
+    L.append("")
+
+    # a node that many unrelated words pass through is usually a parsing artefact: check these first
+    through = Counter()
+    for g, res in per_group.items():
+        seen = set()
+        for r, (s, path) in res.items():
+            if r in tops:
+                seen.update(G.edges[e].parent for e in path[:-1])
+        through.update(seen)
+    L += ["Busiest intermediate nodes (English sections whose path passes through them). "
+          "Affixes are expected here; anything else large deserves a look:", "",
+          "| node | English sections |", "|---|---:|"]
+    for n, c in through.most_common(20):
+        L.append(f"| `{n}` | {c:,} |")
     L.append("")
 
     L += ["## Graph health", ""]

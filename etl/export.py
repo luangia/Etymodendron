@@ -112,7 +112,10 @@ def root_doc(G, pie, mems):
 
 def write_outputs(G, outdir, members, per_group, tops):
     os.makedirs(os.path.join(outdir, "roots"), exist_ok=True)
-    order = sorted(tops, key=lambda p: (-len({g[1] for g, _, _ in members[p]}), p))
+    def direct_words(p):
+        return len({g[1] for g, sc, path in members[p] if not _path_flags(G, sc, path) & AFFIX_FLAG})
+    sizes = {p: direct_words(p) for p in tops}
+    order = sorted(tops, key=lambda p: (-sizes[p], p))
     root_idx = {p: i for i, p in enumerate(order)}
     roots_meta = []
     for p in order:
@@ -121,7 +124,7 @@ def write_outputs(G, outdir, members, per_group, tops):
         with open(os.path.join(outdir, "roots", s + ".json"), "w", encoding="utf-8") as f:
             json.dump(doc, f, ensure_ascii=False, separators=(",", ":"))
         roots_meta.append({"slug": s, "term": display(p), "kind": doc["root"]["kind"],
-                           "words": doc["stats"]["english_words"]})
+                           "words": sizes[p], "words_incl_affix": doc["stats"]["english_words"]})
 
     words, glosses, unrooted = defaultdict(list), defaultdict(dict), defaultdict(list)
     for g, res in per_group.items():

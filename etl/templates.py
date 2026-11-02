@@ -60,8 +60,11 @@ HEDGE_RE = re.compile(
     r"|conjectur\w*|speculat\w*|hypothe\w*|presumabl[ey]|apparently|supposedly|allegedly"
     r"|obscure|unknown|folk etymolog\w*|may be|might be|could be|may have|might have"
     r"|perhaps|likely|unlikely|tentative\w*|some (?:scholars|sources|authors)|according to some"
-    r"|it has been (?:suggested|proposed)|has been (?:suggested|proposed|connected))\b"
+    r"|it has been (?:suggested|proposed)|has been (?:suggested|proposed|connected)"
+    r"|supposed|assumed|believed|thought to|traditionally|commonly (?:derived|connected|said))\b"
     r"|\?", re.I)
+ALTERNATIVES_RE = re.compile(r"\b(alternatively|another (?:theory|possibility|view|explanation)"
+                             r"|others? (?:derive|connect|suggest)|competing (?:theory|theories))\b", re.I)
 SENTENCE_END_RE = re.compile(r"[.;]\s|\n")
 SIBLING_GAP_RE = re.compile(r"\b(and|plus)\b|\+|&|;", re.I)
 OR_GAP_RE = re.compile(r"\bor\b", re.I)
@@ -69,6 +72,7 @@ NOT_ANCESTRY_GAP_RE = re.compile(r"\b(influenc\w*|compare|cf|cognate|akin|relate
 INLINE_MOD_RE = re.compile(r"<[^<>]*>")
 WIKILINK_RE = re.compile(r"\[\[(?:[^\]|]*\|)?([^\]]*)\]\]")
 LANG_PREFIX_RE = re.compile(r"^([a-z]{2,3}(?:-[a-z]{2,5})*):(?!$)(.+)$")
+EMPTY_TERM_RE = re.compile(r"^([a-z]{2,3}(?:-[a-z]{2,5})*):()$")
 
 
 def clean_term(term):
@@ -87,9 +91,13 @@ def node_key(lang, term):
     return f"{lang}|{term.lstrip('*')}"
 
 
+BAD_TERM_RE = re.compile(r"[\[\]{}<>|]|^\W*$|^[a-z]{2,3}(?:-[a-z]{2,5})*:")
+
+
 def _edge(parent_lang, term, etype, via, src, child=None, uncertain=False, evidence=None, pid=None, gloss=None):
     term = clean_term(term)
-    if not term or not parent_lang:
+    # "+", leftover "lang:" prefixes and unexpanded wikitext are not words
+    if not term or not parent_lang or BAD_TERM_RE.search(term) or not re.search(r"\w", term):
         return None
     e = {"c": child, "p": node_key(parent_lang, term), "form": term, "t": etype, "via": via, "src": src}
     if uncertain:
@@ -157,19 +165,25 @@ def _etymon_term(raw, ctx_lang, child, etype, kw_unc, src, out, depth=0):
     """Parse one etymon term (with nested <ety:...>) and append edges to out."""
     if depth > 20:
         return
+    if raw.lstrip().startswith("["):
+        return  # wikitext wiktextract could not expand
     head, mods = _split_mods(raw)
-    m = LANG_PREFIX_RE.match(head)
+    m = LANG_PREFIX_RE.match(head) or EMPTY_TERM_RE.match(head)
     lang, term = (m.group(1), m.group(2)) if m else (ctx_lang, head)
     md = {}
     for k, v in mods:
         md.setdefault(k, v)
+    if not term.strip():
+        term = md.get("alt", "")  # unlinked term, shown only by its display form
     unc = kw_unc or md.get("unc") not in (None, "", "0")
     e = _edge(lang, term, etype, "etymon", src, child=child, uncertain=unc,
               evidence="marked uncertain in {{etymon}}" if unc else None,
               pid=md.get("id") or None, gloss=md.get("t"))
-    if e is None:
-        return
-    out.append(e)
+    if e is not None:
+        out.append(e)
+        child = e["p"]
+    elif term.strip():
+        return  # not a word: drop it and anything nested under it
     for k, v in mods:
         if k != "ety":
             continue
@@ -178,7 +192,7 @@ def _etymon_term(raw, ctx_lang, child, etype, kw_unc, src, out, depth=0):
         if sub_type is None:
             continue
         for g in groups:
-            _etymon_term(g, lang, e["p"], sub_type, False, src, out, depth + 1)
+            _etymon_term(g, lang, child, sub_type, False, src, out, depth + 1)
 
 
 def etymon_edges(args, entry_lang):
@@ -387,6 +401,11 @@ def section_edges(templates, text, entry_lang, entry_key):
         else:
             classic.append(t)
     cl, unknown = classic_edges(classic, text, entry_lang, entry_key)
+    if text and (m := ALTERNATIVES_RE.search(text)):
+        for e in cl:  # the section itself offers competing derivations
+            if not e.get("u"):
+                e["u"] = True
+                e["ev"] = "section gives alternatives: …" + text[max(0, m.start() - 20):m.end() + 60] + "…"
     seen, out = set(), []
     for e in etymon + cl:
         k = (e["c"], e["p"], e["t"], e["via"])
