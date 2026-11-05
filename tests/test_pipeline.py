@@ -16,6 +16,17 @@ def edges_of(templates, text, lang="en", word="x"):
 
 # ------------------------------------------------------------------ templates
 
+def test_ety_is_the_same_template_as_etymon():
+    for name in ("etymon", "ety"):
+        es = edges_of([T(name, _1="en", _2=":bor", _3="la:humus", text="+", tree="1")],
+                      "Borrowed from Latin humus.")
+        assert [(e["p"], e["t"], e["via"]) for e in es] == [("la|humus", "borrowed", "etymon")]
+
+
+def test_ety_without_a_keyword_gives_no_edges():
+    assert edges_of([T("ety", _1="la", nl="1")], "See the etymology of the corresponding lemma form.", "la") == []
+
+
 def test_classic_chain_uses_prose_order():
     text = "From Middle English comen, from Old English cuman, from Proto-Germanic *kwemaną."
     es = edges_of([

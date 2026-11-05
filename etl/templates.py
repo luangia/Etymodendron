@@ -41,6 +41,8 @@ UNKNOWN_TEMPLATES = {"unk", "unknown", "unc", "uncertain"}
 CHAIN_BREAKERS = {"cog", "cognate", "noncog", "noncognate", "ncog", "doublet", "dbt", "surf",
                   "surface analysis", "col-top", "col", "col2", "col3", "desc"}
 
+# {{etymon}} and its shortcut
+ETYMON_TEMPLATES = {"etymon", "ety"}
 ETYMON_KEYWORDS = {
     ":inh": INHERITED,
     **dict.fromkeys([":bor", ":lbor", ":slbor", ":obor", ":ubor"], BORROWED),
@@ -403,7 +405,7 @@ def section_edges(templates, text, entry_lang, entry_key):
     """All edges for one etymology section, de-duplicated. Returns (edges, etymon_ids, unknown_flag)."""
     etymon, classic, ids = [], [], set()
     for t in templates:
-        if t.get("name") == "etymon":
+        if t.get("name") in ETYMON_TEMPLATES:
             es, eid = etymon_edges(t.get("args", {}), entry_lang)
             etymon.extend(es)
             if eid:
