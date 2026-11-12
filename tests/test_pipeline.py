@@ -150,6 +150,16 @@ def test_borrowing_reaches_pie_through_latin_page(tmp_path):
     assert unrooted["zzz"][0][1] == "unknown_origin"
 
 
+def test_rebuild_removes_files_from_an_earlier_build(tmp_path):
+    for sub, name in (("roots", "old-root.json"), ("unrooted", "zz.json")):
+        (tmp_path / "out" / sub).mkdir(parents=True)
+        (tmp_path / "out" / sub / name).write_text("{}", encoding="utf-8")
+    _, _, tops, index, _ = build(tmp_path, [entry("ine-pro", "bʰer-"), entry("en", "zzz", text="Of unknown origin.")])
+    assert not (tmp_path / "out" / "roots" / "old-root.json").exists()
+    assert not (tmp_path / "out" / "unrooted" / "zz.json").exists()
+    assert len(list((tmp_path / "out" / "roots").iterdir())) == len(index["roots"])
+
+
 def test_ambiguous_homograph_is_not_followed(tmp_path):
     lines = [
         entry("en", "foo", [T("bor", "Latin bar", _1="en", _2="la", _3="bar")], "From Latin bar."),
