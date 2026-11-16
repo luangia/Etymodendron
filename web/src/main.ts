@@ -6,6 +6,7 @@ import {
 import {
   renderChooserPanel, renderMissPanel, renderRootPanel, renderUnrootedPanel, renderWordPanel, type PanelContext,
 } from "./panel";
+import { featuredRoot, surpriseRoot } from "./featured";
 import { attachSearch, WordSearch } from "./search";
 import { BottomSheet } from "./sheet";
 import { RadialTree } from "./tree";
@@ -25,9 +26,40 @@ const els = {
   list: $<HTMLUListElement>("search-list"),
   affix: $<HTMLInputElement>("affix-toggle"),
   names: $<HTMLInputElement>("names-toggle"),
+  keyPill: $("guide-pill"),
+  keyCard: $("guide-card"),
 };
 
-const DEFAULT_ROOT = "*ph₂tḗr";
+// ------------------------------------------------------------------ how to read the tree
+
+// open on a first visit; folds into a pill once closed or once the reader starts exploring
+const KEY_SEEN = "etymodendron-guide-seen";
+let keyAutoOpened = false;
+function setKey(open: boolean) {
+  els.keyCard.hidden = !open;
+  els.keyPill.hidden = open;
+  els.keyPill.setAttribute("aria-expanded", String(open));
+}
+function closeKey() {
+  setKey(false);
+  keyAutoOpened = false;
+  try {
+    localStorage.setItem(KEY_SEEN, "1");
+  } catch { /* private mode: it opens again next visit */ }
+}
+/** Open the guide on a first visit (not on a link to a word); otherwise show just the pill. */
+function initKey(allowOpen: boolean) {
+  let seen = false;
+  try {
+    seen = !!localStorage.getItem(KEY_SEEN);
+  } catch { /* storage blocked: treat as a first visit */ }
+  keyAutoOpened = allowOpen && !seen;
+  setKey(keyAutoOpened);
+}
+/** The reader has started exploring: fold the guide away, unless they opened it themselves. */
+function foldKey() {
+  if (keyAutoOpened) closeKey();
+}
 
 interface State {
   index: SearchIndex;
@@ -149,6 +181,7 @@ function draw() {
 
 function recenter(v: VNode) {
   if (!S.root) return;
+  foldKey();
   S.note = null;
   S.view = v;
   S.selected = null;
@@ -157,9 +190,12 @@ function recenter(v: VNode) {
 
 function selectWord(v: VNode | null, focus = false) {
   if (!S.root || !S.view) return;
-  if (v) S.note = null;
+  if (v) {
+    S.note = null;
+    foldKey();
+  }
   if (v && !ancestry(v).includes(S.view)) {
-    // the word is outside the centred subtree: go back to the root view first
+    // the word is outside the centered subtree: go back to the root view first
     S.view = S.root;
     S.selected = v;
     paintCrumbs();
@@ -282,7 +318,7 @@ function rebuildRoot() {
   S.hiddenNames = S.includeNames ? 0 : buildView(S.doc.tree, { ...filter(), names: true }).words - S.root.words;
 }
 
-/** Redraw after a filter change, keeping the centred node and the selected word when still drawn. */
+/** Redraw after a filter change, keeping the centered node and the selected word when still drawn. */
 function refilter() {
   if (!S.doc) return;
   const viewId = S.view?.id, selId = S.selected?.id;
@@ -388,8 +424,28 @@ function setupLayout() {
   els.names.addEventListener("change", () => setNames(els.names.checked));
   document.querySelector(".brand")!.addEventListener("click", (ev) => {
     ev.preventDefault();
-    const m = S.byTerm.get(DEFAULT_ROOT) ?? S.index.roots[0];
+    const m = featuredRoot(S.byTerm, S.meta?.slug) ?? S.index.roots[0];
     void openRoot(m.slug);
+  });
+  $("surprise-btn").addEventListener("click", () => {
+    const m = surpriseRoot(S.index.roots, S.meta?.slug);
+    if (!m) return;
+    foldKey();
+    void openRoot(m.slug);
+  });
+  $("guide-close").addEventListener("click", () => {
+    closeKey();
+    els.keyPill.focus();
+  });
+  els.keyPill.addEventListener("click", () => {
+    keyAutoOpened = false;
+    setKey(true);
+    $("guide-close").focus();
+  });
+  els.keyCard.addEventListener("keydown", (ev) => {
+    if (ev.key !== "Escape") return;
+    closeKey();
+    els.keyPill.focus();
   });
 }
 
@@ -438,6 +494,7 @@ async function main() {
   };
   const search = new WordSearch(index);
   attachSearch(els.search, els.list, search, (h: IndexHit) => index.roots[h[0]].term, (s) => {
+    foldKey();
     if (s.unrooted) return showNote({ kind: "unrooted", word: s.word, info: s.unrooted });
     if (new Set(s.hits.map((x) => x[0])).size > 1) return showNote({ kind: "choose", word: s.word, hits: s.hits });
     const best = s.hits[0];
@@ -449,12 +506,14 @@ async function main() {
   const route = readHash();
   if (route.a) setAffix(true, false);
   if (route.n) setNames(true, false);
-  const start = (route.r && S.bySlug.get(route.r)) || S.byTerm.get(DEFAULT_ROOT) || index.roots[0];
+  // a link names its root; a fresh visit opens one of the featured roots
+  const start = (route.r && S.bySlug.get(route.r)) || featuredRoot(S.byTerm) || index.roots[0];
   await openRoot(start.slug, route.w, route.e, route.c);
   if (route.u && !route.w) {
     const info = await search.lookupUnrooted(route.u);
     if (info) showNote({ kind: "unrooted", word: route.u, info });
   }
+  initKey(!route.w && !route.u);
   window.addEventListener("hashchange", () => {
     const r = readHash();
     if (r.r && r.r !== S.meta?.slug) void openRoot(r.r, r.w, r.e, r.c);

@@ -23,7 +23,7 @@ export interface PanelContext {
   doc: RootDoc;
   meta: RootMeta;
   root: VNode; // full tree of the root file
-  view: VNode; // currently centred node
+  view: VNode; // currently centered node
   hiddenNames: number; // names and places left out of this root's tree by the filter
   hitsFor(word: string): IndexHit[];
   rootMeta(i: number): RootMeta;
@@ -118,7 +118,7 @@ function edgeNotes(e: Edge | undefined): HTMLElement | null {
   return notes.length ? wrap : null;
 }
 
-// --------------------------------------------------------------- root / centred node
+// --------------------------------------------------------------- root / centered node
 
 export function renderRootPanel(body: HTMLElement, ctx: PanelContext) {
   const { doc, view, root } = ctx;
@@ -471,7 +471,7 @@ function chainList(nodes: VNode[], ctx: PanelContext) {
           n.term,
           "linklike strong",
           () => ctx.recenter(n),
-          "Centre the tree here",
+          "Center the tree here",
         );
     row.append(
       h("span", "step-lang", langName(n.lang)),

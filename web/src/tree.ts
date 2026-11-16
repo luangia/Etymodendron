@@ -163,7 +163,7 @@ export class RadialTree {
       });
     this.svg.on("click", () => this.cb.onCenter());
 
-    this.nodes.filter((d) => d.depth === 0).raise(); // keep the centre label above crowded inner rings
+    this.nodes.filter((d) => d.depth === 0).raise(); // keep the center label above crowded inner rings
     this.forced.clear();
     this.select(null);
     this.fit(false);
@@ -206,14 +206,14 @@ export class RadialTree {
     this.svg.transition().duration(250).call(this.zoom.scaleBy as never, f);
   }
 
-  /** Bring a word into view: zoom until its label has room, keeping the centre-to-word path on screen. */
+  /** Bring a word into view: zoom until its label has room, keeping the center-to-word path on screen. */
   focus(v: VNode) {
     const d = this.byVNode.get(this.drawnAncestor(v));
     if (!d) return;
     const { w, h, cx, cy } = this.viewport();
     const [x, y] = point(d.x, d.y);
     const room = this.room.get(d) ?? 10;
-    // readable, but never so close that the path back to the centre leaves the screen
+    // readable, but never so close that the path back to the center leaves the screen
     const fitPath = (Math.min(w, h) * 0.9) / Math.max(1, Math.hypot(x, y) + 80);
     const k = Math.max(this.k, Math.min(fitPath * 2, (LEAF_LABEL_ROOM + 3) / Math.max(room, 0.5), 8));
     const t = d3.zoomIdentity.translate(cx, cy).scale(k).translate(-x / 2, -y / 2);
@@ -226,7 +226,7 @@ export class RadialTree {
     return n ?? v;
   }
 
-  /** Highlight the path from the centre to one word (or clear with null). */
+  /** Highlight the path from the center to one word (or clear with null). */
   select(v: VNode | null) {
     this.spotlight(v ? [v] : null, "selected");
   }
@@ -291,7 +291,7 @@ export class RadialTree {
     if (!v.english && d.depth > 0) {
       const h = document.createElement("div");
       h.className = "tip-hint";
-      h.textContent = `${v.words} English word${v.words === 1 ? "" : "s"} · click to centre here`;
+      h.textContent = `${v.words} English word${v.words === 1 ? "" : "s"} · click to center here`;
       tip.append(h);
     }
     tip.hidden = false;

@@ -73,6 +73,21 @@
         <ul id="search-list" role="listbox" hidden></ul>
       </div>
       <button
+        id="surprise-btn"
+        class="icon-btn"
+        type="button"
+        aria-label="Surprise me: open a random root"
+        title="Surprise me: open a random root">
+        <svg viewBox="0 0 20 20" width="18" height="18" aria-hidden="true">
+          <rect x="3" y="3" width="14" height="14" rx="3.2" fill="none" stroke="currentColor" stroke-width="1.6" />
+          <circle cx="7" cy="7" r="1.25" fill="currentColor" />
+          <circle cx="13" cy="7" r="1.25" fill="currentColor" />
+          <circle cx="10" cy="10" r="1.25" fill="currentColor" />
+          <circle cx="7" cy="13" r="1.25" fill="currentColor" />
+          <circle cx="13" cy="13" r="1.25" fill="currentColor" />
+        </svg>
+      </button>
+      <button
         id="about-btn"
         class="icon-btn"
         type="button"
@@ -189,6 +204,40 @@
             </svg>
           </button>
         </div>
+        <!-- how to read the tree: open on a first visit, then a pill that opens it again -->
+        <div class="guide" id="guide">
+          <button type="button" class="guide-pill" id="guide-pill" aria-expanded="false" aria-controls="guide-card" hidden>
+            <svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true">
+              <circle cx="8" cy="8" r="6.6" fill="none" stroke="currentColor" stroke-width="1.4" />
+              <path d="M8 7.2v4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" />
+              <circle cx="8" cy="4.9" r="0.95" fill="currentColor" />
+            </svg>
+            How to read this tree
+          </button>
+          <section class="guide-card" id="guide-card" aria-labelledby="guide-title" hidden>
+            <header class="guide-head">
+              <h3 id="guide-title">How to read this tree</h3>
+              <button type="button" class="guide-close" id="guide-close" aria-label="Hide the guide" title="Hide">×</button>
+            </header>
+            <h4>On the tree</h4>
+            <ul class="guide-list">
+              <li><svg class="ks" viewBox="0 0 28 16" aria-hidden="true"><circle cx="14" cy="8" r="4" class="ks-word" /></svg>An English word</li>
+              <li><svg class="ks" viewBox="0 0 28 16" aria-hidden="true"><circle cx="14" cy="8" r="4.6" class="ks-inner" /></svg>A word in an older language</li>
+              <li><svg class="ks" viewBox="0 0 28 16" aria-hidden="true"><circle cx="14" cy="8" r="6" class="ks-root" /></svg>The root everything comes from</li>
+              <li><svg class="ks" viewBox="0 0 28 16" aria-hidden="true"><path d="M2 8h24" class="ks-line ks-dash" /></svg>An uncertain step</li>
+              <li><svg class="ks" viewBox="0 0 28 16" aria-hidden="true"><path d="M2 8h24" class="ks-line ks-faint" /></svg>Route not stated by Wiktionary</li>
+              <li><span class="ks ks-text">word <b>+</b></span>More English words are formed from it</li>
+            </ul>
+            <h4>Try this</h4>
+            <ul class="guide-list acts">
+              <li><strong>Click an English word</strong> to see its history</li>
+              <li><strong>Click an older word</strong> to center on it</li>
+              <li><strong>Click the center</strong> or the top trail to go back</li>
+              <li><strong>Drag, scroll or pinch</strong> to move and zoom</li>
+              <li class="hover-only"><strong>Hover</strong> a word for details</li>
+            </ul>
+          </section>
+        </div>
         <div class="tooltip" id="tooltip" role="tooltip" hidden></div>
         <div class="status" id="status" aria-live="polite"></div>
       </section>
@@ -221,7 +270,7 @@
         </p>
         <p class="about-lede">
           Every English word in the tree comes from the ancient word or root at
-          the centre — usually reconstructed
+          the center — usually reconstructed
           <strong>Proto-Indo-European</strong>, the ancestor of most European
           and many Asian languages, spoken around 6,000 years ago. Older stages
           sit on the inner rings; modern English words on the outer ring.
@@ -255,7 +304,7 @@
             </li>
           </ul>
           <p>
-            The colour is set by the first language after Proto-Indo-European,
+            The color is set by the first language after Proto-Indo-European,
             so <em>patriot</em> (Greek → Latin → French → English) counts as
             Greek.
           </p>
@@ -270,7 +319,7 @@
         </details>
         <details>
           <summary>
-            What are the faint grey lines straight from the centre?
+            What are the faint gray lines straight from the center?
           </summary>
           <p>
             Wiktionary names the root for these words but doesn’t say which
@@ -421,7 +470,7 @@
             <li>Type a word in the search box (or press <kbd>/</kbd>).</li>
             <li>
               Click a word for its full history; click an older form to put it
-              at the centre — the trail at the top leads back.
+              at the center — the trail at the top leads back.
             </li>
             <li>Click a branch name to show only that branch.</li>
             <li>
