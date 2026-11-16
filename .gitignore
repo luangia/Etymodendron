@@ -2,3 +2,8 @@ data/
 __pycache__/
 *.pyc
 .pytest_cache/
+.venv/
+warehouse/target/
+warehouse/logs/
+warehouse/dbt_packages/
+warehouse/.user.yml
