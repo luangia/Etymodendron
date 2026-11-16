@@ -1,0 +1,7 @@
+# v2 warehouse: loader + dbt. The v1 pipeline itself needs only the standard library.
+pytest>=8
+duckdb>=1.1
+dbt-core>=1.12,<2
+dbt-duckdb>=1.11,<2
+dbt-bigquery>=1.9,<2
+google-cloud-bigquery>=3,<4

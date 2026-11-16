@@ -1,0 +1,23 @@
+version: 2
+
+sources:
+  - name: raw
+    description: Written by etl/warehouse.py, one partition per dump. Only the newest few dumps are kept.
+    schema: "{{ 'raw' if target.type == 'duckdb' else env_var('BQ_RAW_DATASET', 'etymodendron_raw') }}"
+    tables:
+      - name: raw_dumps
+        description: One row per loaded dump. Never pruned.
+        config:
+          loaded_at_field: loaded_at
+          freshness:
+            warn_after: {count: 14, period: day}
+            error_after: {count: 35, period: day}
+        columns:
+          - name: dump_id
+            data_tests: [unique, not_null]
+      - name: raw_sections
+        description: One row per (lang, word, pos, etymology number) with a hash of its parsed ancestry edges.
+      - name: raw_word_roots
+        description: One row per (English word, etymology, PIE root) shown on the site.
+      - name: raw_unrooted
+        description: One row per English word etymology that reaches no PIE root, with the reason.

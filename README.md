@@ -51,6 +51,56 @@ Cloudflare dashboard if you want one. `npm run check-dist` fails early if the bu
 Pages' limits (20,000 files, 25 MB per file). `web/public/_headers` sets caching: hashed app
 bundles are immutable, `data/` refreshes within an hour of a redeploy.
 
+## Warehouse: history across dumps (`warehouse/`)
+
+kaikki.org republishes the extract regularly. Each dump is loaded into a warehouse and dbt tracks
+how etymologies, and the roots the site shows, change from one dump to the next.
+
+```text
+etl.download → etl.extract → etl.run → etl.warehouse load → dbt build
+                                        raw_* tables          staging → snapshots (SCD2) → marts → data tests
+```
+
+- **`etl/warehouse.py`** flattens `data/work` and `data/out` into four raw tables, partitioned by
+  `dump_id` (the dump's Last-Modified date): `raw_dumps`, `raw_sections` (3.47M rows, one per
+  lang/word/pos/etymology, with a hash of the parsed edges), `raw_word_roots` (668K) and
+  `raw_unrooted` (519K). Reloading a dump replaces its partition; only the newest 3 dumps stay in
+  the raw tables (`--keep`), since the snapshots hold the history. About 1 GB per dump.
+- **Snapshots** (dbt `check` strategy, SCD Type 2): `snap_sections` versions a section only when
+  its `edges_hash` changes (prose edits that change no ancestry are not changes);
+  `snap_word_status` versions a word's set of roots. A section that disappears is closed
+  (`hard_deletes: invalidate`).
+- **Marts** (incremental, one partition per dump):
+  - `fct_dump_summary`: coverage per dump, with deltas (matches `validation_report.md`).
+  - `fct_section_changes`: added / removed / edited / renumbered. Sections are matched by content
+    first, so an etymology inserted at the top of a page is one *added* and some *renumbered*,
+    not every section *edited*.
+  - `fct_word_root_changes`: gained_root / lost_root / roots_changed / added_word / removed_word.
+- **Data tests**: keys unique and not null, accepted values, at most one open snapshot version
+  per key, and two guards that fail the run on a parsing regression: the section count moves more
+  than 5% between dumps, or coverage drops more than 1 point (`vars` in `dbt_project.yml`).
+
+Locally, free, with duckdb:
+
+```bash
+python3 -m venv .venv && .venv/bin/pip install -r requirements-warehouse.txt
+.venv/bin/python -m etl.warehouse load --backend duckdb     # → data/warehouse.duckdb
+cd warehouse && ../.venv/bin/dbt build --profiles-dir .
+```
+
+On BigQuery: `DBT_TARGET=prod GCP_PROJECT=<project>`, and `--backend bigquery` for the loader
+(auth is Application Default Credentials, e.g. `gcloud auth application-default login`).
+Enable billing on the project: the BigQuery sandbox expires tables after 60 days, which would
+delete the snapshots. Usage stays inside the free tier (about 5 GB stored, a few GB scanned a week).
+
+**CI** (`.github/workflows/ci.yml`): pytest on every PR, including two synthetic dumps through the
+loader and a full `dbt build` on duckdb, so snapshots, change types and data tests are checked
+with no cloud account. **Weekly** (`.github/workflows/weekly.yml`): Mondays, if the published dump
+is new, run the pipeline, load BigQuery and `dbt build`; a failing data test fails the run. It
+needs the repo variable `GCP_PROJECT` and the secrets `GCP_WORKLOAD_IDENTITY_PROVIDER` and
+`GCP_SERVICE_ACCOUNT` (Workload Identity Federation; the service account needs BigQuery Data
+Editor and Job User). A full run peaks at 5.3 GB of memory.
+
 ## Licenses
 
 The generated data is derived from Wiktionary and is CC BY-SA 4.0 — see `DATA_LICENSE.md`.

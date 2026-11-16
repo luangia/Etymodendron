@@ -1,0 +1,25 @@
+name: etymodendron
+version: "2.0.0"
+profile: etymodendron
+config-version: 2
+
+model-paths: [models]
+snapshot-paths: [snapshots]
+test-paths: [tests]
+macro-paths: [macros]
+target-path: target
+clean-targets: [target, dbt_packages]
+
+vars:
+  # data tests that guard against a parsing regression (like the ignored {{ety}} template)
+  max_section_change_pct: 5      # fail if the section count moves more than this between dumps
+  max_coverage_drop_pts: 1       # fail if English root coverage drops by more than this many points
+
+models:
+  etymodendron:
+    staging:
+      +materialized: view
+    intermediate:
+      +materialized: table
+    marts:
+      +materialized: incremental

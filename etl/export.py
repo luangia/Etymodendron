@@ -3,6 +3,7 @@ import hashlib
 import json
 import os
 import re
+import shutil
 import unicodedata
 from collections import defaultdict
 
@@ -128,8 +129,14 @@ def root_doc(G, pie, mems):
     }
 
 
+def _fresh_dir(d):
+    """Empty a per-file output folder, so files from an earlier build can't be deployed."""
+    shutil.rmtree(d, ignore_errors=True)
+    os.makedirs(d)
+
+
 def write_outputs(G, outdir, members, per_group, tops):
-    os.makedirs(os.path.join(outdir, "roots"), exist_ok=True)
+    _fresh_dir(os.path.join(outdir, "roots"))
     def direct_words(p):
         return len({g[1] for g, sc, path in members[p] if not _path_flags(G, sc, path) & AFFIX_FLAG})
     sizes = {p: direct_words(p) for p in tops}
@@ -199,7 +206,7 @@ def write_unrooted_search(outdir, unrooted, rooted):
             row += [node_lang(stop), display(stop)]
         shards[shard_of(w)].append(row)
     d = os.path.join(outdir, "unrooted")
-    os.makedirs(d, exist_ok=True)
+    _fresh_dir(d)
     for k, rows in shards.items():
         rows.sort(key=lambda r: (search_fold(r[0]), r[0]))
         with open(os.path.join(d, f"{k}.json"), "w", encoding="utf-8") as f:

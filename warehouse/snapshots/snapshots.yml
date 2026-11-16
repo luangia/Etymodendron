@@ -1,0 +1,28 @@
+snapshots:
+  - name: snap_sections
+    description: >
+      SCD Type 2 history of every etymology section's parsed ancestry. A new version is written
+      only when edges_hash changes; a section that disappears from a dump is closed (dbt_valid_to set).
+      dump_id on each version is the dump it first appeared in.
+    relation: ref('latest_sections')
+    config:
+      unique_key: section_key
+      strategy: check
+      check_cols: [edges_hash]
+      hard_deletes: invalidate
+    columns:
+      - name: section_key
+        data_tests: [not_null, one_current_version]
+
+  - name: snap_word_status
+    description: >
+      SCD Type 2 history of which PIE roots each English word reaches (or why it reaches none).
+    relation: ref('latest_word_status')
+    config:
+      unique_key: word
+      strategy: check
+      check_cols: [root_slugs, unrooted_reason]
+      hard_deletes: invalidate
+    columns:
+      - name: word
+        data_tests: [not_null, one_current_version]
