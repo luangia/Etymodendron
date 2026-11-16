@@ -1,0 +1,84 @@
+name: Weekly dump
+
+# kaikki.org rebuilds the Wiktionary extract regularly. Every Monday: if the published dump is
+# not loaded yet, run the v1 pipeline on it, load it into BigQuery and run `dbt build`
+# (models, SCD2 snapshots and data tests). A failing data test fails the run.
+on:
+  schedule:
+    - cron: "0 7 * * 1"
+  workflow_dispatch:
+    inputs:
+      force:
+        description: Reload even if this dump is already in BigQuery
+        type: boolean
+        default: false
+
+concurrency:
+  group: weekly-dump
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  id-token: write     # for Workload Identity Federation: no long-lived GCP key in the repo
+
+env:
+  GCP_PROJECT: ${{ vars.GCP_PROJECT }}
+  BQ_LOCATION: ${{ vars.BQ_LOCATION || 'US' }}
+  BQ_DATASET: etymodendron
+  BQ_RAW_DATASET: etymodendron_raw
+  DBT_TARGET: prod
+
+jobs:
+  ingest:
+    runs-on: ubuntu-latest
+    timeout-minutes: 150
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: requirements-warehouse.txt
+      - run: pip install -r requirements-warehouse.txt
+
+      - uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
+
+      - name: Is there a new dump?
+        id: check
+        run: python -m etl.warehouse check --backend bigquery
+
+      - name: Download (about 3 GB)
+        if: steps.check.outputs.new == 'true' || inputs.force
+        run: python -m etl.download
+
+      - name: Extract
+        if: steps.check.outputs.new == 'true' || inputs.force
+        run: python -m etl.extract
+
+      - name: Build graph and site data
+        if: steps.check.outputs.new == 'true' || inputs.force
+        run: python -m etl.run
+
+      - name: Load into BigQuery
+        if: steps.check.outputs.new == 'true' || inputs.force
+        run: python -m etl.warehouse load --backend bigquery
+
+      - name: dbt build (models, snapshots, data tests)
+        if: steps.check.outputs.new == 'true' || inputs.force
+        working-directory: warehouse
+        run: dbt build --profiles-dir .
+
+      - name: Source freshness
+        if: always() && steps.check.outcome == 'success'
+        working-directory: warehouse
+        run: dbt source freshness --profiles-dir .
+
+      - name: Keep the validation report
+        if: steps.check.outputs.new == 'true' || inputs.force
+        uses: actions/upload-artifact@v4
+        with:
+          name: validation-report-${{ steps.check.outputs.dump_id }}
+          path: data/out/validation_report.md

@@ -1,0 +1,36 @@
+version: 2
+
+models:
+  - name: fct_dump_summary
+    description: One row per dump, with English root coverage and the change from the previous dump.
+    columns:
+      - name: dump_id
+        data_tests: [unique, not_null]
+      - name: coverage_pct
+        data_tests: [not_null]
+
+  - name: fct_section_changes
+    description: Sections whose parsed ancestry changed between consecutive dumps.
+    data_tests:
+      - unique_combination:
+          arguments:
+            columns: [dump_id, section_key, prev_section_key]
+    columns:
+      - name: change_type
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments: {values: [added, removed, edited, renumbered]}
+
+  - name: fct_word_root_changes
+    description: English words whose PIE roots changed between consecutive dumps.
+    data_tests:
+      - unique_combination:
+          arguments:
+            columns: [dump_id, word]
+    columns:
+      - name: change_type
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments: {values: [added_word, removed_word, gained_root, lost_root, roots_changed]}
