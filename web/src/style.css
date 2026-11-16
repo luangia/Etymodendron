@@ -270,6 +270,7 @@ a { color: var(--accent); }
 .tooltip strong { font-size: 14px; margin-right: 6px; }
 .tip-lang { color: var(--muted); }
 .tip-edge { color: var(--ink-2); margin-top: 2px; }
+.tip-via { color: var(--muted); margin-top: 2px; font-size: 12px; }
 .tip-gloss { margin-top: 4px; }
 .tip-hint { color: var(--muted); margin-top: 4px; font-size: 12px; }
 

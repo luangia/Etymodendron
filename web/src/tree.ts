@@ -15,6 +15,24 @@ const INNER_LABEL_ROOM = 30;   // ...and an intermediate label once it has this 
 
 const point = (x: number, y: number): [number, number] => [y * Math.sin(x), -y * Math.cos(x)];
 
+/**
+ * The node drawn in place of v: an intermediate form with exactly one child is a step on a
+ * straight chain (Latin → Old French → Middle English), so the drawing skips to the end of
+ * the chain. The skipped steps stay in the view model: the panel and the tooltip list them.
+ */
+const drawn = (v: VNode): VNode => {
+  let n = v;
+  while (!n.english && n.children.length === 1) n = n.children[0];
+  return n;
+};
+
+/** The steps skipped between a drawn node and the drawn node above it, top first. */
+function skipped(d: HNode): VNode[] {
+  const out: VNode[] = [];
+  for (let n = d.data.parent; n && d.parent && n !== d.parent.data; n = n.parent) out.push(n);
+  return out.reverse();
+}
+
 export class RadialTree {
   private svg: d3.Selection<SVGSVGElement, unknown, null, undefined>;
   private layer: d3.Selection<SVGGElement, unknown, null, undefined>;
@@ -66,7 +84,7 @@ export class RadialTree {
   }
 
   render(view: VNode) {
-    const h = d3.hierarchy(view, (d) => d.children);
+    const h = d3.hierarchy(view, (d) => d.children.map(drawn));
     const leaves = h.leaves().length;
     this.radius = Math.max(170, (leaves * MIN_LEAF_GAP) / (2 * Math.PI));
     const layout = d3.cluster<VNode>()
@@ -94,7 +112,11 @@ export class RadialTree {
       .selectAll<SVGPathElement, d3.HierarchyPointLink<VNode>>("path")
       .data(root.links())
       .join("path")
-      .attr("class", (l) => `link b-${l.target.data.branch ?? "pie"}${l.target.data.edge?.uncertain ? " uncertain" : ""}`)
+      .attr("class", (l) => {
+        // a collapsed chain is uncertain if any of its steps is
+        const uncertain = [...skipped(l.target), l.target.data].some((n) => n.edge?.uncertain);
+        return `link b-${l.target.data.branch ?? "pie"}${uncertain ? " uncertain" : ""}`;
+      })
       .attr("d", linkGen);
 
     this.nodes = this.layer.append("g").attr("class", "nodes")
@@ -246,11 +268,19 @@ export class RadialTree {
     lang.className = "tip-lang";
     lang.textContent = langName(v.lang);
     tip.append(strong, lang);
-    if (v.edge && d.parent) {
+    if (v.edge && v.parent && d.parent) {
       const e = document.createElement("div");
       e.className = "tip-edge";
-      e.textContent = `${EDGE_LABEL[v.edge.type] ?? v.edge.type} ${d.parent.data.term}${v.edge.uncertain ? " (uncertain)" : ""}`;
+      e.textContent = `${EDGE_LABEL[v.edge.type] ?? v.edge.type} ${langName(v.parent.lang)} ${v.parent.term}` +
+        (v.edge.uncertain ? " (uncertain)" : "");
       tip.append(e);
+      const via = skipped(d).slice(0, -1); // the immediate parent is already named above
+      if (via.length) {
+        const p = document.createElement("div");
+        p.className = "tip-via";
+        p.textContent = `via ${via.map((n) => `${langName(n.lang)} ${n.term}`).join(" → ")}`;
+        tip.append(p);
+      }
     }
     if (v.english && v.data.gloss) {
       const g = document.createElement("div");
