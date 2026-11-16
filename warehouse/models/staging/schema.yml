@@ -1,0 +1,44 @@
+version: 2
+
+models:
+  - name: stg_dumps
+    columns:
+      - name: dump_id
+        data_tests: [unique, not_null]
+  - name: stg_sections
+    data_tests:
+      - unique_combination:
+          arguments:
+            columns: [dump_id, section_key]
+    columns:
+      - name: section_key
+        data_tests: [not_null]
+      - name: edges_hash
+        data_tests: [not_null]
+  - name: stg_word_roots
+    data_tests:
+      - unique_combination:
+          arguments:
+            columns: [dump_id, word, etym, root_slug]
+    columns:
+      - name: root_kind
+        data_tests:
+          - accepted_values:
+              arguments: {values: [root, lexeme]}
+  - name: stg_unrooted
+    columns:
+      - name: reason
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: [no_etymology, ambiguous_homograph, no_ancestry_templates, chain_broken_unresolved,
+                         non_pie_or_incomplete, pie_suffix_only, proto_language_no_pie, unknown_origin]
+  - name: latest_sections
+    columns:
+      - name: section_key
+        data_tests: [unique, not_null]
+  - name: latest_word_status
+    columns:
+      - name: word
+        data_tests: [unique, not_null]
