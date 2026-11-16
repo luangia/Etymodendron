@@ -3,7 +3,9 @@ import {
   ancestry, BRANCH_LABEL, BRANCHES, branchCounts, buildView, findById, findWord, langName, loadBuildInfo, loadIndex,
   loadLanguages, loadRoot, type VNode,
 } from "./data";
-import { renderMissPanel, renderRootPanel, renderUnrootedPanel, renderWordPanel, type PanelContext } from "./panel";
+import {
+  renderChooserPanel, renderMissPanel, renderRootPanel, renderUnrootedPanel, renderWordPanel, type PanelContext,
+} from "./panel";
 import { attachSearch, WordSearch } from "./search";
 import { BottomSheet } from "./sheet";
 import { RadialTree } from "./tree";
@@ -38,7 +40,11 @@ interface State {
   includeAffix: boolean;
   pinnedBranch: Branch | null;
   /** a searched word that has no tree to show: the panel explains why */
-  note: { kind: "unrooted"; word: string; info: UnrootedInfo } | { kind: "miss"; query: string } | null;
+  note:
+    | { kind: "unrooted"; word: string; info: UnrootedInfo }
+    | { kind: "miss"; query: string }
+    | { kind: "choose"; word: string; hits: IndexHit[] } // several roots: the reader picks a tree
+    | null;
 }
 let S: State;
 let loadToken = 0;
@@ -154,6 +160,14 @@ function showPanel() {
   };
   if (S.note?.kind === "unrooted") renderUnrootedPanel(els.body, S.note.word, S.note.info);
   else if (S.note?.kind === "miss") renderMissPanel(els.body, S.note.query);
+  else if (S.note?.kind === "choose") {
+    const word = S.note.word;
+    renderChooserPanel(els.body, word, S.note.hits, {
+      rootMeta: (i) => S.index.roots[i],
+      gloss: (e) => S.index.glosses[word]?.[String(e)] ?? null,
+      pick: ([ri, e]) => void openRoot(S.index.roots[ri].slug, word, e),
+    });
+  }
   else if (S.selected) renderWordPanel(els.body, ctx, S.selected);
   else renderRootPanel(els.body, ctx);
   els.body.scrollTop = 0;
@@ -362,6 +376,7 @@ async function main() {
   const search = new WordSearch(index);
   attachSearch(els.search, els.list, search, (h: IndexHit) => index.roots[h[0]].term, (s) => {
     if (s.unrooted) return showNote({ kind: "unrooted", word: s.word, info: s.unrooted });
+    if (new Set(s.hits.map((x) => x[0])).size > 1) return showNote({ kind: "choose", word: s.word, hits: s.hits });
     const best = s.hits[0];
     void openRoot(index.roots[best[0]].slug, s.word, best[1]);
   }, (query) => showNote({ kind: "miss", query }));
