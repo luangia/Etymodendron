@@ -143,6 +143,17 @@
           >
         </div>
         <svg id="tree" role="img" aria-label="Radial etymology tree"></svg>
+        <!-- shown instead of the tree while the panel has no tree to go with (root picker, word with no root) -->
+        <div class="stage-empty" id="stage-empty" hidden>
+          <svg class="se-mark" viewBox="0 0 64 64" width="56" height="56" aria-hidden="true">
+            <circle cx="32" cy="32" r="26" fill="none" stroke="currentColor" stroke-width="1.5" stroke-dasharray="3 5" />
+            <circle cx="32" cy="32" r="13" fill="none" stroke="currentColor" stroke-width="1.5" stroke-dasharray="3 5" />
+            <circle cx="32" cy="32" r="4" fill="currentColor" />
+          </svg>
+          <p class="se-title" id="se-title"></p>
+          <p class="se-text" id="se-text"></p>
+          <button type="button" class="se-back" id="se-back"></button>
+        </div>
         <div class="zoom-btns">
           <button
             class="icon-btn"

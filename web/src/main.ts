@@ -59,6 +59,32 @@ const tree = new RadialTree(els.svg, els.tooltip, {
   },
 });
 
+/** While the panel shows a word with no tree to go with it, a placeholder replaces the tree. */
+function paintStage() {
+  const note = S.note;
+  const stage = els.svg.closest(".stage")!;
+  const empty = $("stage-empty");
+  stage.classList.toggle("blank", !!note);
+  empty.hidden = !note;
+  if (!note) return;
+  tree.select(null);
+  els.tooltip.hidden = true;
+  const [title, text] =
+    note.kind === "choose"
+      ? [`Choose a root for “${note.word}”`,
+        `It traces back to ${new Set(note.hits.map((x) => x[0])).size} Proto-Indo-European roots. ` +
+        `Pick one ${mobile.matches ? "below" : "in the panel"} to see its tree.`]
+      : note.kind === "unrooted"
+        ? [`No tree for “${note.word}”`,
+          `This word doesn’t reach a Proto-Indo-European root in the site’s data. The panel ${mobile.matches ? "below " : ""}explains why.`]
+        : [`No match for “${note.query}”`, "There is no English word spelled like this in the data."];
+  $("se-title").textContent = title;
+  $("se-text").textContent = text;
+  const back = $("se-back");
+  back.hidden = !S.meta;
+  if (S.meta) back.textContent = `Back to the ${S.meta.term} tree`;
+}
+
 // ------------------------------------------------------------------ status
 
 function status(msg: string, isError = false) {
@@ -142,6 +168,7 @@ function selectWord(v: VNode | null, focus = false) {
 
 function showPanel() {
   if (!S.doc || !S.meta || !S.root || !S.view) return;
+  paintStage();
   const ctx: PanelContext = {
     doc: S.doc,
     meta: S.meta,
@@ -322,6 +349,10 @@ function setupLayout() {
   $("zoom-in").addEventListener("click", () => tree.zoomBy(1.6));
   $("zoom-out").addEventListener("click", () => tree.zoomBy(1 / 1.6));
   $("zoom-fit").addEventListener("click", () => tree.fit());
+  $("se-back").addEventListener("click", () => {
+    S.note = null;
+    selectWord(null);
+  });
   els.affix.addEventListener("change", () => setAffix(els.affix.checked));
   document.querySelector(".brand")!.addEventListener("click", (ev) => {
     ev.preventDefault();

@@ -236,6 +236,24 @@ a { color: var(--accent); }
 .toggle input { accent-color: var(--accent); margin: 0; }
 
 .zoom-btns { position: absolute; right: 12px; bottom: 12px; display: flex; flex-direction: column; gap: 6px; z-index: 5; }
+
+/* no tree to show (root picker, word with no root): a placeholder replaces the tree and its controls */
+.stage.blank #tree, .stage.blank .crumbs, .stage.blank .controls, .stage.blank .zoom-btns { visibility: hidden; }
+.stage-empty {
+  position: absolute; inset: 0; z-index: 4;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 8px; padding: 24px; text-align: center;
+}
+.stage-empty[hidden] { display: none; }
+.se-mark { color: var(--muted); opacity: 0.7; margin-bottom: 4px; }
+.se-title { margin: 0; font-size: 17px; font-weight: 650; color: var(--ink); }
+.se-text { margin: 0; max-width: 340px; color: var(--ink-2); }
+.se-back {
+  margin-top: 8px; padding: 6px 14px; border-radius: 999px; cursor: pointer; font: inherit; font-size: 13px;
+  border: 1px solid var(--hairline); background: var(--surface); color: var(--ink);
+}
+.se-back:hover { background: var(--surface-2); border-color: var(--accent); }
+.se-back:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 .status {
   position: absolute;
   left: 50%;
@@ -528,6 +546,8 @@ a { color: var(--accent); }
   .toggle span { font-size: 12px; }
   .zoom-btns { bottom: calc(var(--sheet-peek) + 12px); }
   .status { bottom: calc(var(--sheet-peek) + 12px); }
+  /* the sheet covers the lower half: keep the placeholder in the part still visible */
+  .stage-empty { justify-content: flex-start; padding-top: 12vh; }
   /* the page itself never scrolls or bounces: only the sheet's content does */
   html, body { position: fixed; inset: 0; width: 100%; }
   .panel {
