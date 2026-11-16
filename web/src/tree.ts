@@ -9,6 +9,8 @@ interface Callbacks {
   onCenter(): void;
 }
 
+const KEEP_VISIBLE = 160;      // px of the tree that panning always leaves on screen
+const LABEL_REACH = 100;       // px outer labels reach past the outer ring (labels keep their screen size)
 const MIN_LEAF_GAP = 13;       // px of outer-ring arc per English word at zoom 1
 const LEAF_LABEL_ROOM = 11;    // show a leaf label once it has this many px of arc on screen
 const INNER_LABEL_ROOM = 30;   // ...and an intermediate label once it has this many
@@ -53,6 +55,7 @@ export class RadialTree {
     this.layer = this.svg.append("g").attr("class", "zoom-layer");
     this.zoom = d3.zoom<SVGSVGElement, unknown>()
       .scaleExtent([0.15, 14])
+      .constrain((t, extent) => this.keepInView(t, extent))
       .on("zoom", (ev: d3.D3ZoomEvent<SVGSVGElement, unknown>) => {
         this.layer.attr("transform", ev.transform.toString());
         this.k = ev.transform.k;
@@ -63,7 +66,30 @@ export class RadialTree {
         this.hideTooltip();
       });
     this.svg.call(this.zoom).on("dblclick.zoom", null);
+    // double-click empty space: back to the whole tree (a double-click on a word is just two clicks)
+    this.svg.on("dblclick", (ev: MouseEvent) => {
+      if (!(ev.target as Element).closest(".node")) this.fit();
+    });
     new ResizeObserver(() => this.size()).observe(svgEl);
+  }
+
+  /**
+   * Panning limit: the tree can go partly off screen but never all the way. The tree is a disc
+   * around the root, so keep that disc overlapping the visible area (between the floating
+   * controls and, on phones, the details sheet) by KEEP_VISIBLE px.
+   */
+  private keepInView(t: d3.ZoomTransform, [[x0, y0], [x1, y1]]: [[number, number], [number, number]]) {
+    y0 += this.insets.top;
+    y1 -= this.insets.bottom;
+    x1 -= this.insets.right;
+    const r = this.radius * t.k + LABEL_REACH;
+    const maxDist = r - Math.min(KEEP_VISIBLE, r); // how far the root may sit outside the visible area
+    const nx = Math.max(x0, Math.min(x1, t.x));
+    const ny = Math.max(y0, Math.min(y1, t.y));
+    const dist = Math.hypot(t.x - nx, t.y - ny);
+    if (dist <= maxDist) return t;
+    const f = dist ? maxDist / dist : 0;
+    return d3.zoomIdentity.translate(nx + (t.x - nx) * f, ny + (t.y - ny) * f).scale(t.k);
   }
 
   /** Screen areas covered by floating controls; the tree is fitted into what remains. */
