@@ -248,6 +248,16 @@ def test_alternative_theories_mark_section_uncertain():
     assert es and all(e.get("u") for e in es)
 
 
+def test_an_alternative_derivation_is_uncertain():
+    # Proto-Germanic *harduz: *(s)ker- is offered only as "an alternative derivation"
+    text = ("Traditionally derived from Proto-Indo-European *kort-ús, from *kret-. Kroonen appears skeptical "
+            "enough, however, to espouse an alternative derivation from Proto-Indo-European *(s)ker- (“to cut”).")
+    es = edges_of([T("inh", "Proto-Indo-European *kort-ús", _1="gem-pro", _2="ine-pro", _3="", _4="*kort-ús"),
+                   T("der", "Proto-Indo-European *(s)ker- (“to cut”)", _1="gem-pro", _2="ine-pro", _3="*(s)ker-")],
+                  text, lang="gem-pro", word="harduz")
+    assert {e["p"]: bool(e.get("u")) for e in es} == {"ine-pro|kort-ús": True, "ine-pro|(s)ker-": True}
+
+
 def test_etymon_uncertainty_wins_over_unhedged_template(tmp_path):
     lines = [
         entry("en", "father", [T("inh", "*ph₂tḗr", _1="en", _2="ine-pro", _3="*ph₂tḗr")], "From *ph₂tḗr."),

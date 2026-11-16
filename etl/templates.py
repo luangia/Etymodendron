@@ -66,6 +66,8 @@ HEDGE_RE = re.compile(
     r"|supposed|assumed|believed|thought to|traditionally|commonly (?:derived|connected|said))\b"
     r"|\?", re.I)
 ALTERNATIVES_RE = re.compile(r"\b(alternatively|another (?:theory|possibility|view|explanation)"
+                             r"|alternat(?:iv)?e (?:derivations?|etymolog(?:y|ies)|explanations?|theor(?:y|ies)"
+                             r"|origins?|proposals?|views?|reconstructions?|suggestions?)"
                              r"|others? (?:derive|connect|suggest)|competing (?:theory|theories))\b", re.I)
 SENTENCE_END_RE = re.compile(r"[.;]\s|\n")
 SIBLING_GAP_RE = re.compile(r"\b(and|plus)\b|\+|&|;", re.I)
