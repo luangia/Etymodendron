@@ -1,7 +1,7 @@
 import "./style.css";
 import {
   ancestry, BRANCH_LABEL, BRANCHES, branchCounts, buildView, findById, findWord, langName, loadBuildInfo, loadIndex,
-  loadLanguages, loadRoot, type VNode,
+  loadLanguages, loadRoot, type VNode, type ViewFilter,
 } from "./data";
 import {
   renderChooserPanel, renderMissPanel, renderRootPanel, renderUnrootedPanel, renderWordPanel, type PanelContext,
@@ -24,6 +24,7 @@ const els = {
   search: $<HTMLInputElement>("search"),
   list: $<HTMLUListElement>("search-list"),
   affix: $<HTMLInputElement>("affix-toggle"),
+  names: $<HTMLInputElement>("names-toggle"),
 };
 
 const DEFAULT_ROOT = "*ph₂tḗr";
@@ -38,6 +39,9 @@ interface State {
   view: VNode | null;
   selected: VNode | null;
   includeAffix: boolean;
+  includeNames: boolean;
+  /** English words in this root's tree hidden because they are names or places */
+  hiddenNames: number;
   pinnedBranch: Branch | null;
   /** a searched word that has no tree to show: the panel explains why */
   note:
@@ -115,13 +119,18 @@ async function openRoot(slug: string, word?: string, etym = 0, centerId?: string
     const hit = S.index.words[word]?.find((h) => S.index.roots[h[0]].slug === slug && (h[1] === etym || etym === 0));
     if (hit && hit[2] & 2) setAffix(true, false);
   }
+  // a name or place (Richard, Bordeaux) needs names shown
+  if (word && !S.includeNames && !findWord(buildView(doc.tree, filter()), word, etym) &&
+      findWord(buildView(doc.tree, { ...filter(), names: true }), word, etym)) {
+    setNames(true, false);
+  }
   S.meta = meta;
   S.doc = doc;
-  S.root = buildView(doc.tree, S.includeAffix);
-  S.view = (centerId && findById(S.root, centerId)) || S.root;
+  rebuildRoot();
+  S.view = (centerId && findById(S.root!, centerId)) || S.root;
   S.selected = null;
   draw();
-  if (word) {
+  if (word && S.root) {
     const v = findWord(S.root, word, etym);
     if (v) selectWord(v, true);
     else status(`“${word}” is not drawn under ${meta.term} with the current filter.`);
@@ -174,6 +183,7 @@ function showPanel() {
     meta: S.meta,
     root: S.root,
     view: S.view,
+    hiddenNames: S.hiddenNames,
     hitsFor: (w) => S.index.words[w] ?? [],
     rootMeta: (i) => S.index.roots[i],
     rootByTerm: (t) => S.byTerm.get(t),
@@ -263,20 +273,40 @@ function paintLegend() {
   tree.focusBranch(S.pinnedBranch);
 }
 
-function setAffix(on: boolean, redraw = true) {
-  S.includeAffix = on;
-  els.affix.checked = on;
-  if (!redraw || !S.doc) return;
+const filter = (): ViewFilter => ({ affix: S.includeAffix, names: S.includeNames });
+
+/** Build the view of the current root file with the current filter. */
+function rebuildRoot() {
+  if (!S.doc) return;
+  S.root = buildView(S.doc.tree, filter());
+  S.hiddenNames = S.includeNames ? 0 : buildView(S.doc.tree, { ...filter(), names: true }).words - S.root.words;
+}
+
+/** Redraw after a filter change, keeping the centred node and the selected word when still drawn. */
+function refilter() {
+  if (!S.doc) return;
   const viewId = S.view?.id, selId = S.selected?.id;
-  S.root = buildView(S.doc.tree, on);
-  S.view = (viewId && findById(S.root, viewId)) || S.root;
-  const sel = selId ? findById(S.root, selId) : null;
+  rebuildRoot();
+  S.view = (viewId && findById(S.root!, viewId)) || S.root;
+  const sel = selId ? findById(S.root!, selId) : null;
   S.selected = null;
   draw();
   if (sel) selectWord(sel);
 }
 
-// ------------------------------------------------------------------ URL state: #r=<slug>&c=<node id>&w=<word>&e=<etym>&a=1
+function setAffix(on: boolean, redraw = true) {
+  S.includeAffix = on;
+  els.affix.checked = on;
+  if (redraw) refilter();
+}
+
+function setNames(on: boolean, redraw = true) {
+  S.includeNames = on;
+  els.names.checked = on;
+  if (redraw) refilter();
+}
+
+// ------------------------------------------------------------------ URL state: #r=<slug>&c=<node id>&w=<word>&e=<etym>&a=1&n=1
 
 function writeHash() {
   if (!S.meta) return;
@@ -287,6 +317,7 @@ function writeHash() {
     if (S.selected.data.etym) p.set("e", String(S.selected.data.etym));
   }
   if (S.includeAffix) p.set("a", "1");
+  if (S.includeNames) p.set("n", "1");
   if (S.note?.kind === "unrooted") p.set("u", S.note.word);
   const next = `#${p.toString()}`;
   if (location.hash !== next) history.replaceState(null, "", next);
@@ -295,7 +326,7 @@ function writeHash() {
 function readHash() {
   const p = new URLSearchParams(location.hash.slice(1));
   return { r: p.get("r"), c: p.get("c") ?? undefined, w: p.get("w") ?? undefined, e: Number(p.get("e") ?? 0),
-    a: p.get("a") === "1", u: p.get("u") ?? undefined };
+    a: p.get("a") === "1", n: p.get("n") === "1", u: p.get("u") ?? undefined };
 }
 
 // ------------------------------------------------------------------ theme & layout
@@ -354,6 +385,7 @@ function setupLayout() {
     selectWord(null);
   });
   els.affix.addEventListener("change", () => setAffix(els.affix.checked));
+  els.names.addEventListener("change", () => setNames(els.names.checked));
   document.querySelector(".brand")!.addEventListener("click", (ev) => {
     ev.preventDefault();
     const m = S.byTerm.get(DEFAULT_ROOT) ?? S.index.roots[0];
@@ -402,7 +434,7 @@ async function main() {
     byTerm: new Map(index.roots.map((r) => [r.term, r])),
     bySlug: new Map(index.roots.map((r) => [r.slug, r])),
     meta: null, doc: null, root: null, view: null, selected: null,
-    includeAffix: false, pinnedBranch: null, note: null,
+    includeAffix: false, includeNames: false, hiddenNames: 0, pinnedBranch: null, note: null,
   };
   const search = new WordSearch(index);
   attachSearch(els.search, els.list, search, (h: IndexHit) => index.roots[h[0]].term, (s) => {
@@ -416,6 +448,7 @@ async function main() {
 
   const route = readHash();
   if (route.a) setAffix(true, false);
+  if (route.n) setNames(true, false);
   const start = (route.r && S.bySlug.get(route.r)) || S.byTerm.get(DEFAULT_ROOT) || index.roots[0];
   await openRoot(start.slug, route.w, route.e, route.c);
   if (route.u && !route.w) {

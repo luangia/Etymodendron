@@ -24,6 +24,7 @@ export interface PanelContext {
   meta: RootMeta;
   root: VNode; // full tree of the root file
   view: VNode; // currently centred node
+  hiddenNames: number; // names and places left out of this root's tree by the filter
   hitsFor(word: string): IndexHit[];
   rootMeta(i: number): RootMeta;
   rootByTerm(term: string): RootMeta | undefined;
@@ -186,6 +187,14 @@ export function renderRootPanel(body: HTMLElement, ctx: PanelContext) {
             "p",
             "muted small",
             `${doc.stats.via_affix.toLocaleString()} more reach this root only through an affix (re-, -tion…). Use the checkbox above the tree to show them.`,
+          )
+        : null,
+      atRoot && ctx.hiddenNames
+        ? h(
+            "p",
+            "muted small",
+            `${ctx.hiddenNames === 1 ? "1 name or place is" : `${ctx.hiddenNames.toLocaleString()} names and places are`} ` +
+              "hidden (Richard, Bordeaux…). Use the checkbox above the tree to show them.",
           )
         : null,
     ),

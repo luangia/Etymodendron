@@ -101,43 +101,53 @@ function make(n: TreeNode, parent: VNode | null, id: string, branch: Branch | nu
     branch, english: n.lang === "en", words: 0 };
 }
 
+/** A name or place (Richard, Bordeaux): every part of speech Wiktionary gives it is "name". */
+export const isName = (n: TreeNode) => !!n.pos?.length && n.pos.every((p) => p === "name");
+
+export interface ViewFilter {
+  /** words that reach the root only through an affix (re-, -tion) */
+  affix: boolean;
+  /** names and places */
+  names: boolean;
+}
+
 /**
  * Build the drawable tree. English words hang on the outer ring; English words derived from
- * them become `derivatives` so the ring stays readable. Affix-only paths are dropped unless asked.
+ * them become `derivatives` so the ring stays readable. Affix-only paths, and names and places,
+ * are dropped unless asked for. A dropped word's kept derivatives move up into its place
+ * (Fenwick hidden: Fenwickian takes its spot); their `parent` stays the dropped word, so the
+ * panel's ancestry and the tooltip still name it.
  */
-export function buildView(tree: TreeNode, includeAffix: boolean): VNode {
-  const keepWord = (n: TreeNode) => includeAffix || !n.via_affix;
+export function buildView(tree: TreeNode, filter: ViewFilter): VNode {
+  const keepWord = (n: TreeNode) => (filter.affix || !n.via_affix) && (filter.names || !isName(n));
 
-  function derivative(n: TreeNode, parent: VNode, id: string): VNode | null {
+  /** The word itself, or, when it is dropped, whatever kept words stood under it. */
+  const kept = (n: TreeNode, v: VNode): VNode[] => (keepWord(n) ? [v] : [...v.children, ...v.derivatives]);
+
+  function derivative(n: TreeNode, parent: VNode, id: string): VNode[] {
     const v = make(n, parent, id, parent.branch);
     (n.children ?? []).forEach((c, i) => {
       if (c.lang !== "en") return; // a later borrowing back into another language: not shown here
-      const d = derivative(c, v, `${id}.${i}`);
-      if (d) v.derivatives.push(d);
+      v.derivatives.push(...derivative(c, v, `${id}.${i}`));
     });
-    return keepWord(n) || v.derivatives.length ? v : null;
+    return kept(n, v);
   }
 
-  function build(n: TreeNode, parent: VNode | null, id: string, above: Branch | null): VNode | null {
+  function build(n: TreeNode, parent: VNode | null, id: string, above: Branch | null): VNode[] {
     // an English word hanging straight off a PIE node has no stated route, so no branch
     const branch = above ?? (n.lang === "en" && parent ? "unknown" : family(n.lang));
     const v = make(n, parent, id, parent ? branch : null);
     (n.children ?? []).forEach((c, i) => {
       const cid = `${id}.${i}`;
-      if (v.english && c.lang === "en") {
-        const d = derivative(c, v, cid);
-        if (d) v.derivatives.push(d);
-      } else {
-        const cv = build(c, v, cid, parent ? branch : null);
-        if (cv) v.children.push(cv);
-      }
+      if (v.english && c.lang === "en") v.derivatives.push(...derivative(c, v, cid));
+      else v.children.push(...build(c, v, cid, parent ? branch : null));
     });
-    if (!parent) return v;
-    if (v.english) return keepWord(n) || v.children.length || v.derivatives.length ? v : null;
-    return v.children.length ? v : null;
+    if (!parent) return [v];
+    if (v.english) return kept(n, v);
+    return v.children.length ? [v] : [];
   }
 
-  const root = build(tree, null, "0", null)!;
+  const root = build(tree, null, "0", null)[0];
   const count = (v: VNode): number =>
     (v.words = (v.english ? 1 : 0) + v.children.reduce((s, c) => s + count(c), 0) +
       v.derivatives.reduce((s, d) => s + countDeriv(d), 0));
