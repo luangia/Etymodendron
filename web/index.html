@@ -79,7 +79,15 @@
         aria-label="Surprise me: open a random root"
         title="Surprise me: open a random root">
         <svg viewBox="0 0 20 20" width="18" height="18" aria-hidden="true">
-          <rect x="3" y="3" width="14" height="14" rx="3.2" fill="none" stroke="currentColor" stroke-width="1.6" />
+          <rect
+            x="3"
+            y="3"
+            width="14"
+            height="14"
+            rx="3.2"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.6" />
           <circle cx="7" cy="7" r="1.25" fill="currentColor" />
           <circle cx="13" cy="7" r="1.25" fill="currentColor" />
           <circle cx="10" cy="10" r="1.25" fill="currentColor" />
@@ -164,9 +172,28 @@
         <svg id="tree" role="img" aria-label="Radial etymology tree"></svg>
         <!-- shown instead of the tree while the panel has no tree to go with (root picker, word with no root) -->
         <div class="stage-empty" id="stage-empty" hidden>
-          <svg class="se-mark" viewBox="0 0 64 64" width="56" height="56" aria-hidden="true">
-            <circle cx="32" cy="32" r="26" fill="none" stroke="currentColor" stroke-width="1.5" stroke-dasharray="3 5" />
-            <circle cx="32" cy="32" r="13" fill="none" stroke="currentColor" stroke-width="1.5" stroke-dasharray="3 5" />
+          <svg
+            class="se-mark"
+            viewBox="0 0 64 64"
+            width="56"
+            height="56"
+            aria-hidden="true">
+            <circle
+              cx="32"
+              cy="32"
+              r="26"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.5"
+              stroke-dasharray="3 5" />
+            <circle
+              cx="32"
+              cy="32"
+              r="13"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.5"
+              stroke-dasharray="3 5" />
             <circle cx="32" cy="32" r="4" fill="currentColor" />
           </svg>
           <p class="se-title" id="se-title"></p>
@@ -206,36 +233,92 @@
         </div>
         <!-- how to read the tree: open on a first visit, then a pill that opens it again -->
         <div class="guide" id="guide">
-          <button type="button" class="guide-pill" id="guide-pill" aria-expanded="false" aria-controls="guide-card" hidden>
+          <button
+            type="button"
+            class="guide-pill"
+            id="guide-pill"
+            aria-expanded="false"
+            aria-controls="guide-card"
+            hidden>
             <svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true">
-              <circle cx="8" cy="8" r="6.6" fill="none" stroke="currentColor" stroke-width="1.4" />
-              <path d="M8 7.2v4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" />
+              <circle
+                cx="8"
+                cy="8"
+                r="6.6"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.4" />
+              <path
+                d="M8 7.2v4"
+                stroke="currentColor"
+                stroke-width="1.6"
+                stroke-linecap="round" />
               <circle cx="8" cy="4.9" r="0.95" fill="currentColor" />
             </svg>
             How to read this tree
           </button>
-          <section class="guide-card" id="guide-card" aria-labelledby="guide-title" hidden>
+          <section
+            class="guide-card"
+            id="guide-card"
+            aria-labelledby="guide-title"
+            hidden>
             <header class="guide-head">
               <h3 id="guide-title">How to read this tree</h3>
-              <button type="button" class="guide-close" id="guide-close" aria-label="Hide the guide" title="Hide">×</button>
+              <button
+                type="button"
+                class="guide-close"
+                id="guide-close"
+                aria-label="Hide the guide"
+                title="Hide">
+                ×
+              </button>
             </header>
             <h4>On the tree</h4>
             <ul class="guide-list">
-              <li><svg class="ks" viewBox="0 0 28 16" aria-hidden="true"><circle cx="14" cy="8" r="4" class="ks-word" /></svg>An English word</li>
-              <li><svg class="ks" viewBox="0 0 28 16" aria-hidden="true"><circle cx="14" cy="8" r="4.6" class="ks-inner" /></svg>A word in an older language</li>
-              <li><svg class="ks" viewBox="0 0 28 16" aria-hidden="true"><circle cx="14" cy="8" r="6" class="ks-root" /></svg>The root everything comes from</li>
-              <li><svg class="ks" viewBox="0 0 28 16" aria-hidden="true"><path d="M2 8h24" class="ks-line ks-dash" /></svg>An uncertain step</li>
-              <li><svg class="ks" viewBox="0 0 28 16" aria-hidden="true"><path d="M2 8h24" class="ks-line ks-faint" /></svg>Route not stated by Wiktionary</li>
-              <li><span class="ks ks-text">word <b>+</b></span>More English words are formed from it</li>
+              <li>
+                <svg class="ks" viewBox="0 0 28 16" aria-hidden="true">
+                  <circle cx="14" cy="8" r="4" class="ks-word" /></svg
+                >An English word
+              </li>
+              <li>
+                <svg class="ks" viewBox="0 0 28 16" aria-hidden="true">
+                  <circle cx="14" cy="8" r="4.6" class="ks-inner" /></svg
+                >A word in an older language
+              </li>
+              <li>
+                <svg class="ks" viewBox="0 0 28 16" aria-hidden="true">
+                  <circle cx="14" cy="8" r="6" class="ks-root" /></svg
+                >The root everything comes from
+              </li>
+              <li>
+                <svg class="ks" viewBox="0 0 28 16" aria-hidden="true">
+                  <path d="M2 8h24" class="ks-line ks-dash" /></svg
+                >An uncertain step
+              </li>
+              <li>
+                <svg class="ks" viewBox="0 0 28 16" aria-hidden="true">
+                  <path d="M2 8h24" class="ks-line ks-faint" /></svg
+                >Route not stated by Wiktionary
+              </li>
+              <li>
+                <span class="ks ks-text">word <b>+</b></span
+                >More English words are formed from it
+              </li>
             </ul>
             <h4>Try this</h4>
             <ul class="guide-list acts">
               <li><strong>Click an English word</strong> to see its history</li>
               <li><strong>Click an older word</strong> to center on it</li>
-              <li><strong>Click the center</strong> or the top trail to go back</li>
+              <li>
+                <strong>Click the center</strong> or the top trail to go back
+              </li>
               <li><strong>Drag, scroll or pinch</strong> to move and zoom</li>
-              <li><strong>Double-click</strong> empty space to see the whole tree</li>
-              <li class="hover-only"><strong>Hover</strong> a word for details</li>
+              <li>
+                <strong>Double-click</strong> empty space to see the whole tree
+              </li>
+              <li class="hover-only">
+                <strong>Hover</strong> a word for details
+              </li>
             </ul>
           </section>
         </div>
@@ -274,13 +357,16 @@
           the center — usually reconstructed
           <strong>Proto-Indo-European</strong>, the ancestor of most European
           and many Asian languages, spoken around 6,000 years ago. Older stages
-          sit on the inner rings; modern English words on the outer ring.
+          of a word sit on the inner rings, which branch out to their modern
+          English descendants on the outer ring.
         </p>
         <p class="about-lede">
-          It is a tool for seeing which words belong together, not a full
-          etymological entry for each one. For the in-depth story of a word, see
-          <a href="https://en.wiktionary.org/" target="_blank" rel="noopener">Wiktionary</a>.
-          Enjoy exploring!
+          Etymodendron displays the ancestry of words and how they are related,
+          showing how words, like each of us, came from those before them. For
+          the in-depth story of a word, see
+          <a href="https://en.wiktionary.org/" target="_blank" rel="noopener"
+            >Wiktionary</a
+          >. Happy exploring!
         </p>
 
         <h3>Reading the tree</h3>
@@ -304,11 +390,6 @@
               Sanskrit, Slavic…
             </li>
           </ul>
-          <p>
-            The color is set by the first language after Proto-Indo-European,
-            so <em>patriot</em> (Greek → Latin → French → English) counts as
-            Greek.
-          </p>
         </details>
         <details>
           <summary>Why are some lines dashed?</summary>
@@ -332,7 +413,7 @@
           <summary>What’s a “surprising cognate”?</summary>
           <p>
             Two English words from the same ancient root that arrived by
-            different routes: <em>father</em> is native Germanic,
+            different routes. For example, <em>father</em> is native Germanic,
             <em>paternal</em> came through Latin, <em>patriot</em> through
             Greek. Use “Highlight on tree” in the panel to see their routes side
             by side.
@@ -341,9 +422,9 @@
         <details>
           <summary>What does the asterisk mean, as in *ph₂tḗr?</summary>
           <p>
-            The word is reconstructed: nobody ever wrote it down, but linguists
-            worked it out by comparing its descendants. The odd letters (ʰ, ₂,
-            ḱ) are the standard notation for its sounds.
+            The word is reconstructed by linguists who worked it out by
+            comparing its descendants. The odd letters (ʰ, ₂, ḱ) are the
+            standard notation for its sounds.
           </p>
         </details>
         <details>
@@ -384,28 +465,19 @@
           <p>
             Only words whose ancestry Wiktionary traces back to
             Proto-Indo-European get a tree — about a third of everyday
-            vocabulary. Words are left out when their history stops at
-            Proto-Germanic, when they come from another family (<em>coffee</em>
-            from Arabic, <em>tomato</em> from Nahuatl), when their origin is
-            unknown, or when the Wiktionary entry tells the history only in
-            plain prose the site can’t read reliably.
+            vocabulary. We don't include words whose history stop too early ,
+            words from another family, or words whose origins are unknown.
           </p>
           <p>
-            Search still finds these words, marked “no PIE root”: pick one to
-            see why, and where its traced history stops.
-          </p>
-        </details>
-        <details>
-          <summary>Why does a word appear under two different roots?</summary>
-          <p>
-            Compounds have several roots (<em>television</em> is a Greek part
-            plus a Latin part), and some words have competing theories. Each is
-            marked, and uncertain ones are flagged.
+            You can still search for these words to see why and where their
+            traced history stops.
           </p>
         </details>
 
         <details>
-          <summary>Why are words like “reconstruction” hidden?</summary>
+          <summary>
+            What is <em>“Include words formed with an affix”</em>?
+          </summary>
           <p>
             Words that reach a root only through a common prefix or suffix
             (<em>re-</em>, <em>-tion</em>) would bury the interesting links.
@@ -415,7 +487,7 @@
 
         <h3>Accuracy</h3>
         <details>
-          <summary>Where does this come from, and is it reliable?</summary>
+          <summary>How do we get the data?</summary>
           <p>
             Everything comes from the
             <a
@@ -429,18 +501,17 @@
               target="_blank"
               rel="noopener noreferrer"
               >kaikki.org</a
-            >. If Wiktionary doesn’t state a link, it isn’t drawn, and every
-            hedge in its wording is shown as uncertain. Wiktionary is written by
-            volunteers and its quality varies, so treat this as a map to explore
-            rather than an authority.
+            >. Wiktionary is written by volunteers and its quality varies, so
+            treat this as a map to exploratory rather than an authoritative
+            guide.
           </p>
         </details>
         <details>
           <summary>I found a mistake. How do I report it?</summary>
           <p>
-            If the etymology itself is incorrect, you can fix it on Wiktionary:
-            it will appear here the next time the data is rebuilt. If Wiktionary
-            is right but the site shows it incorrectly,
+            If the etymology itself is incorrect, you can fix it on Wiktionary
+            and it will appear here the next time the data is rebuilt. If
+            Wiktionary is right but the site shows it incorrectly,
             <a href="mailto:luanphamgia@gmail.com?subject=Etymodendron%20bug"
               >email me</a
             >.
@@ -451,53 +522,6 @@
           <p id="about-date">
             It reflects a snapshot of Wiktionary; edits made since then aren’t
             included yet.
-          </p>
-        </details>
-        <details>
-          <summary>
-            Why does a Wiktionary link sometimes go to a missing page?
-          </summary>
-          <p>
-            Old forms are often written with marks (macrons, accents) that the
-            page title drops, or the form has no page of its own yet. Those
-            steps are labelled “no page under this form”.
-          </p>
-        </details>
-
-        <h3>Using the site</h3>
-        <details>
-          <summary>How do I get around?</summary>
-          <ul>
-            <li>Type a word in the search box (or press <kbd>/</kbd>).</li>
-            <li>
-              Click a word for its full history; click an older form to put it
-              at the center — the trail at the top leads back.
-            </li>
-            <li>Click a branch name to show only that branch.</li>
-            <li>
-              Drag to pan; pinch or scroll to zoom. Small labels appear as you
-              zoom in.
-            </li>
-          </ul>
-        </details>
-        <details>
-          <summary>Can I share what I’m looking at?</summary>
-          <p>
-            Yes — the address bar always matches the current view, including the
-            selected word. Copy the link.
-          </p>
-        </details>
-        <details>
-          <summary>Can I reuse the data?</summary>
-          <p>
-            Yes, under
-            <a
-              href="https://creativecommons.org/licenses/by-sa/4.0/"
-              target="_blank"
-              rel="noopener noreferrer"
-              >CC BY-SA 4.0</a
-            >: credit Wiktionary and its contributors, and share any adaptations
-            under the same license.
           </p>
         </details>
       </div>

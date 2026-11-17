@@ -1,8 +1,9 @@
 name: Weekly dump
 
 # kaikki.org rebuilds the Wiktionary extract regularly. Every Monday: if the published dump is
-# not loaded yet, run the v1 pipeline on it, load it into BigQuery and run `dbt build`
-# (models, SCD2 snapshots and data tests). A failing data test fails the run.
+# not loaded yet, run the v1 pipeline on it, load it into BigQuery, run `dbt build`
+# (models, SCD2 snapshots and data tests) and deploy the site. A failing data test fails the
+# run before the deploy. Setup: docs/SETUP.md.
 on:
   schedule:
     - cron: "0 7 * * 1"
@@ -71,13 +72,33 @@ jobs:
         working-directory: warehouse
         run: dbt build --profiles-dir .
 
+      # Reached only when every step above passed, so a dump that fails a dbt data test
+      # (coverage drop, section count jump) never reaches the live site.
+      - uses: actions/setup-node@v4
+        if: steps.check.outputs.new == 'true' || inputs.force
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+
+      - name: Deploy the site to Cloudflare Pages
+        if: steps.check.outputs.new == 'true' || inputs.force
+        working-directory: web
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          npm ci
+          npm run deploy
+
       - name: Source freshness
         if: always() && steps.check.outcome == 'success'
         working-directory: warehouse
         run: dbt source freshness --profiles-dir .
 
+      # also (especially) when a data test failed: the report is what explains it
       - name: Keep the validation report
-        if: steps.check.outputs.new == 'true' || inputs.force
+        if: always() && (steps.check.outputs.new == 'true' || inputs.force)
         uses: actions/upload-artifact@v4
         with:
           name: validation-report-${{ steps.check.outputs.dump_id }}

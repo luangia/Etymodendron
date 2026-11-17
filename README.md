@@ -96,10 +96,11 @@ delete the snapshots. Usage stays inside the free tier (about 5 GB stored, a few
 **CI** (`.github/workflows/ci.yml`): pytest on every PR, including two synthetic dumps through the
 loader and a full `dbt build` on duckdb, so snapshots, change types and data tests are checked
 with no cloud account. **Weekly** (`.github/workflows/weekly.yml`): Mondays, if the published dump
-is new, run the pipeline, load BigQuery and `dbt build`; a failing data test fails the run. It
+is new, run the pipeline, load BigQuery, `dbt build` and deploy the site; a failing data test
+fails the run before the deploy. Step-by-step setup: [`docs/SETUP.md`](docs/SETUP.md). It
 needs the repo variable `GCP_PROJECT` and the secrets `GCP_WORKLOAD_IDENTITY_PROVIDER` and
 `GCP_SERVICE_ACCOUNT` (Workload Identity Federation; the service account needs BigQuery Data
-Editor and Job User). A full run peaks at 5.3 GB of memory.
+Editor and Job User), plus `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID` for the deploy. A full run peaks at 5.3 GB of memory.
 
 ## Licenses
 
